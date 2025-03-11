@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tom's Adventure</title>
+    <link rel="stylesheet" href="./styles.css">
+    <!-- Use a CDN for the font to avoid local file issues -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Fallback styles in case the external stylesheet fails to load */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #87CEEB;
+            font-family: 'Press Start 2P', cursive, sans-serif;
+            touch-action: manipulation;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Prevent double-tap zoom on mobile */
+        * {
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body>
+    <!-- Landscape mode recommendation message -->
+    <div id="landscape-message">
+        For the best experience, please rotate your device to landscape mode
+    </div>
+    
+    <div id="game-container">
+        <div id="score">Score: 0</div>
+        <div id="high-score">High Score: 0</div>
+        
+        <div id="start-screen">
+            <h1 id="title">Tom's Adventure</h1>
+            <p>Help Tom run through the countryside while avoiding trolls!</p>
+            <p>Press SPACE or UP ARROW to jump</p>
+            <p>Hold SPACE or UP ARROW to float longer</p>
+            <p class="mobile-only">Tap screen to jump, hold to float</p>
+            <div class="controls">
+                <button id="start-btn">Start Game</button>
+                <button id="settings-btn">Settings</button>
+            </div>
+        </div>
+        
+        <div id="settings-screen" class="hidden">
+            <h2>Settings</h2>
+            <div class="setting">
+                <label for="difficulty">Difficulty:</label>
+                <select id="difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="setting">
+                <label for="sound-toggle">Sound:</label>
+                <input type="checkbox" id="sound-toggle" checked>
+            </div>
+            <div class="setting">
+                <label for="debug-toggle">Debug Mode:</label>
+                <input type="checkbox" id="debug-toggle">
+            </div>
+            <div class="setting">
+                <button id="export-logs">Export Logs</button>
+            </div>
+            <button id="back-btn">Back</button>
+        </div>
+        
+        <div id="game-over" class="hidden">
+            <h2>Game Over!</h2>
+            <p id="final-score">Your score: 0</p>
+            <p id="new-high-score" class="hidden">New High Score!</p>
+            <button id="restart-btn">Play Again</button>
+            <button id="menu-btn">Main Menu</button>
+        </div>
+        
+        <div id="death-animation" class="hidden">
+            <div id="death-message">OMG! They killed Tom!</div>
+            <div id="death-score">Score: 0</div>
+            <div class="death-controls">
+                <button id="death-restart">Play Again</button>
+                <button id="death-menu">Main Menu</button>
+                <button id="death-high-scores">High Scores</button>
+            </div>
+        </div>
+        
+        <div id="player"></div>
+        <div id="ground"></div>
+        <div id="mountains"></div>
+        <div id="joke-bubble-container"></div>
+        
+        <!-- Mobile controls overlay -->
+        <div id="mobile-controls" class="hidden">
+            <div id="jump-area"></div>
+        </div>
+    </div>
+
+    <div id="high-score-modal" class="modal">
+        <div class="modal-content">
+            <h2>New High Score!</h2>
+            <p>Your score: <span id="new-high-score"></span></p>
+            <div class="input-group">
+                <label for="player-name">Enter your name (max 15 characters):</label>
+                <input type="text" id="player-name" maxlength="15" placeholder="Your name">
+            </div>
+            <button id="submit-score">Submit</button>
+        </div>
+    </div>
+
+    <div id="high-score-table-modal" class="modal">
+        <div class="modal-content high-score-table-modal-content">
+            <h2>Top 100 High Scores</h2>
+            <div class="high-score-table-container">
+                <table id="high-score-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="high-score-table-body">
+                        <!-- High scores will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <button id="close-high-score-table">Close</button>
+        </div>
+    </div>
+
+    <!-- Scripts with explicit relative paths -->
+    <script src="./js/config.js"></script>
+    <script src="./js/logger.js"></script>
+    <script>
+        // Mock AudioManager to prevent errors
+        const AudioManager = {
+            play: function(soundName) {
+                console.log('Playing sound:', soundName);
+                GameLogger.debug(`Playing sound: ${soundName}`);
+            },
+            init: function() {
+                console.log('Audio initialized');
+                GameLogger.info('Audio system initialized');
+            }
+        };
+    </script>
+    <script src="./js/entities.js"></script>
+    <script src="./js/jokes.js"></script>
+    <script src="./js/game.js"></script>
+
+    <!-- Add Firebase SDK before your game scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- Add the highscores.js script -->
+    <script src="./js/highscores.js"></script>
+</body>
+</html> 

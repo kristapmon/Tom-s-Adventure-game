@@ -1,0 +1,5 @@
+# Tom's Adventure - Game Log
+# This file contains logs of game events, errors, and debugging information
+# Format: [TIMESTAMP] [LEVEL] MESSAGE DATA
+
+[2023-10-25T12:00:00.000Z] [INFO] Game logging system initialized 

@@ -1,0 +1,1162 @@
+/* Main Game Styles */
+:root {
+    --primary-color: #4CAF50;
+    --secondary-color: #483D8B;
+    --accent-color: #1E90FF;
+    --background-color: #87CEEB;
+    --ground-color: #3A5F0B;
+    --text-color: #FFFFFF;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    image-rendering: pixelated;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--background-color);
+    font-family: 'Press Start 2P', cursive;
+    perspective: 1000px;
+}
+
+#game-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #87CEEB;
+    margin: 0 auto;
+    max-width: 1200px;
+    transform-style: preserve-3d;
+    image-rendering: pixelated;
+}
+
+/* UI Elements */
+#score, #high-score {
+    position: absolute;
+    top: 20px;
+    font-size: 18px;
+    color: var(--text-color);
+    text-shadow: 2px 2px 4px var(--shadow-color);
+    z-index: 10;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    font-family: 'Press Start 2P', cursive;
+}
+
+#score {
+    left: 20px;
+}
+
+#high-score {
+    right: 20px;
+}
+
+/* Screens */
+#start-screen, #game-over, #settings-screen, #death-animation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-color);
+    z-index: 30;
+    background-color: rgba(0, 0, 0, 0.7);
+    text-align: center;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+#title {
+    font-size: 36px;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px var(--shadow-color);
+    color: var(--primary-color);
+    font-family: 'Press Start 2P', cursive;
+}
+
+#start-screen p, #game-over p, #settings-screen p {
+    margin: 10px 0;
+    max-width: 80%;
+    line-height: 1.5;
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Buttons */
+button {
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 15px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-family: 'Press Start 2P', cursive;
+    box-shadow: 0 4px 8px var(--shadow-color);
+    transition: all 0.3s ease;
+    image-rendering: pixelated;
+}
+
+button:hover {
+    background-color: #3e8e41;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px var(--shadow-color);
+}
+
+button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Settings Screen */
+.setting {
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 300px;
+}
+
+.setting label {
+    margin-right: 15px;
+}
+
+select, input[type="checkbox"] {
+    padding: 8px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+}
+
+/* Game Elements */
+#ground {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #8B4513;
+    z-index: 10;
+    transform: none;
+    background-image: linear-gradient(to bottom, #8B4513 0%, #8B4513 60%, #5D3A1A 100%);
+}
+
+#ground::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    background-color: #4CAF50;
+    background-image: linear-gradient(to bottom, #4CAF50 0%, #2E7D32 100%);
+    z-index: 1;
+}
+
+#player {
+    position: absolute;
+    bottom: 60px;
+    left: 100px;
+    width: 60px;
+    height: 90px;
+    z-index: 20;
+    transform-style: preserve-3d;
+    will-change: transform;
+    image-rendering: pixelated;
+}
+
+.troll {
+    position: absolute;
+    bottom: 60px;
+    width: 60px;
+    height: 60px;
+    z-index: 15;
+    background-color: transparent;
+    border-radius: 5px;
+    transform-style: preserve-3d;
+    will-change: transform;
+    box-shadow: 2px 5px 10px var(--shadow-color);
+    image-rendering: pixelated;
+}
+
+/* Trees */
+.tree {
+    position: absolute;
+    bottom: 60px;
+    z-index: 11;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+
+/* Sun */
+#sun {
+    position: absolute;
+    z-index: -5;
+    pointer-events: none;
+}
+
+@keyframes sunPulse {
+    0% {
+        box-shadow: 0 0 30px #FFFF00;
+        transform: scale(1);
+    }
+    100% {
+        box-shadow: 0 0 50px #FFFF00;
+        transform: scale(1.05);
+    }
+}
+
+/* Clouds */
+.cloud {
+    position: absolute;
+    width: 100px;
+    height: 50px;
+    background-color: white;
+    border-radius: 50px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    z-index: -10;
+    pointer-events: none;
+}
+
+.cloud:before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.cloud:after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 60px;
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+#mountains {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    width: 100%;
+    height: 30vh;
+    z-index: 6;
+    transform-style: preserve-3d;
+    image-rendering: pixelated;
+}
+
+.mountain {
+    position: absolute;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-left: 150px solid transparent;
+    border-right: 150px solid transparent;
+    border-bottom: 200px solid #6B8E23;
+    filter: drop-shadow(5px 5px 5px var(--shadow-color));
+    transform-style: preserve-3d;
+    will-change: transform, left;
+}
+
+/* Mountain shadow/detail */
+.mountain::after {
+    content: '';
+    position: absolute;
+    bottom: -200px;
+    left: -60px;
+    width: 0;
+    height: 0;
+    border-left: 60px solid transparent;
+    border-right: 0px solid transparent;
+    border-bottom: 200px solid rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+/* Joke Bubble */
+#joke-bubble-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    image-rendering: pixelated;
+}
+
+#joke-bubble {
+    position: fixed;
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    max-width: 250px;
+    min-width: 200px;
+    font-size: 14px;
+    display: none;
+    transform: translateZ(20px);
+    box-shadow: 2px 2px 5px var(--shadow-color);
+    text-align: center;
+    line-height: 1.4;
+    font-weight: bold;
+    color: black;
+    font-family: 'Press Start 2P', cursive;
+    image-rendering: pixelated;
+    will-change: transform, left, top;
+    transition: left 0.1s ease-out;
+}
+
+#joke-bubble:after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    margin-left: -10px;
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: white transparent;
+}
+
+/* Death Animation */
+#death-animation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 25;
+}
+
+#death-message {
+    position: relative;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 36px;
+    color: #FF0000;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    text-align: center;
+    animation: pulse 2s infinite;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+#death-score {
+    position: relative;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 24px;
+    color: white;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    text-align: center;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+#death-high-score {
+    position: relative;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 24px;
+    color: gold;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    text-align: center;
+    margin-bottom: 40px;
+    animation: pulse 1.5s infinite;
+    width: 100%;
+}
+
+.death-controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    width: 100%;
+}
+
+#death-restart, #death-menu {
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-family: 'Press Start 2P', cursive;
+    box-shadow: 0 4px 8px var(--shadow-color);
+    transition: all 0.3s ease;
+}
+
+#death-restart:hover, #death-menu:hover {
+    background-color: #3e8e41;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px var(--shadow-color);
+}
+
+#death-restart:active, #death-menu:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+@keyframes deathBounce {
+    0% { transform: rotate(90deg) scale(0.1); opacity: 0; }
+    60% { transform: rotate(90deg) scale(1.2); opacity: 1; }
+    100% { transform: rotate(90deg) scale(1); opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+#dead-tom {
+    position: relative;
+    margin: 10px auto 20px;
+    transform-origin: center;
+    animation: float 3s infinite alternate ease-in-out;
+    max-width: 100%;
+    overflow: visible;
+}
+
+/* Pixel Art Styling */
+.pixel-art {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+/* Responsive Design */
+@media (min-width: 769px) {
+    /* Desktop/Tablet (landscape) */
+    #ground {
+        height: 60px;
+    }
+    
+    #ground::before {
+        top: -8px;
+        height: 12px;
+    }
+    
+    #player {
+        bottom: 60px;
+    }
+    
+    .troll {
+        bottom: 60px;
+    }
+    
+    .tree {
+        bottom: 60px;
+    }
+    
+    #mountains {
+        bottom: 60px;
+    }
+    
+    .powerup {
+        bottom: calc(60px + 50px);
+    }
+}
+
+@media (max-width: 768px) {
+    #title {
+        font-size: 32px;
+        margin-bottom: 15px;
+    }
+    
+    button {
+        font-size: 16px;
+        padding: 10px 15px;
+    }
+    
+    #score, #high-score {
+        font-size: 14px;
+    }
+    
+    #joke-bubble {
+        max-width: 200px;
+        font-size: 12px;
+    }
+    
+    /* Ensure game container fits mobile viewport */
+    #game-container {
+        height: 100vh;
+        min-height: 400px;
+    }
+    
+    /* Adjust ground position and appearance */
+    #ground {
+        height: 50px;
+    }
+    
+    #ground::before {
+        top: -6px;
+        height: 10px;
+    }
+    
+    /* Adjust player position */
+    #player {
+        bottom: 50px;
+        transform: scale(1.1) translateZ(10px);
+    }
+    
+    /* Adjust troll position */
+    .troll {
+        bottom: 50px;
+        transform: scale(1.1);
+    }
+    
+    /* Adjust power-up positions */
+    .powerup {
+        bottom: calc(50px + 50px);
+    }
+    
+    /* Adjust death screen */
+    #death-animation {
+        padding: 20px;
+    }
+    
+    #death-message {
+        font-size: 32px;
+    }
+    
+    #death-score, #death-high-score {
+        font-size: 18px;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #start-screen p {
+        font-size: 12px;
+        margin: 5px 0;
+    }
+    
+    #title {
+        font-size: 28px;
+    }
+    
+    /* Make game elements more visible */
+    #player {
+        transform: scale(1.2) translateZ(10px);
+        left: 80px;
+    }
+    
+    .troll {
+        transform: scale(1.2);
+    }
+    
+    .powerup {
+        transform: scale(1.2);
+    }
+    
+    /* Ensure trees are visible */
+    .tree {
+        bottom: 50px;
+    }
+    
+    /* Adjust mountains */
+    #mountains {
+        bottom: 50px;
+    }
+    
+    /* Ensure death screen is centered */
+    #death-animation {
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Make death message bigger on mobile */
+    #death-message {
+        font-size: 40px;
+        margin-bottom: 30px;
+    }
+}
+
+/* Fix for very small screens and landscape orientation */
+@media (max-height: 500px), (max-width: 360px) {
+    #game-container {
+        height: 100vh;
+        min-height: 300px;
+    }
+    
+    #ground {
+        height: 40px;
+    }
+    
+    #player {
+        bottom: 40px;
+        transform: scale(0.9) translateZ(10px);
+    }
+    
+    .troll {
+        bottom: 40px;
+        transform: scale(0.9);
+    }
+    
+    .tree {
+        bottom: 40px;
+        transform: scale(0.9);
+    }
+    
+    .powerup {
+        bottom: calc(40px + 40px);
+        transform: scale(0.9);
+    }
+    
+    #mountains {
+        bottom: 40px;
+    }
+    
+    #death-message {
+        font-size: 28px;
+    }
+    
+    #death-score, #death-high-score {
+        font-size: 16px;
+    }
+    
+    .death-controls button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Landscape orientation specific adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+    #landscape-message {
+        display: none;
+    }
+    
+    #game-container {
+        height: 100vh;
+    }
+    
+    #ground {
+        height: 20vh;
+        background-color: #8B4513;
+        background-image: linear-gradient(to bottom, #8B4513 0%, #8B4513 60%, #5D3A1A 100%);
+    }
+    
+    #ground::before {
+        top: -8px;
+        height: 12px;
+        background-color: #4CAF50;
+        background-image: linear-gradient(to bottom, #4CAF50 0%, #2E7D32 100%);
+    }
+    
+    #player {
+        bottom: 20vh;
+        left: 80px;
+    }
+    
+    .troll {
+        bottom: 20vh;
+    }
+    
+    .tree {
+        bottom: 20vh;
+    }
+    
+    .powerup {
+        bottom: calc(20vh + 30px);
+    }
+    
+    #mountains {
+        bottom: 20vh;
+    }
+    
+    /* Make start screen more compact */
+    #start-screen {
+        padding: 10px;
+    }
+    
+    #start-screen p {
+        margin: 3px 0;
+    }
+    
+    /* Adjust death screen for landscape */
+    #death-animation {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-around;
+    }
+    
+    #death-message {
+        width: 100%;
+        margin-bottom: 10px;
+        font-size: 36px;
+    }
+    
+    .death-controls {
+        margin-top: 10px;
+    }
+}
+
+/* Power-ups */
+.powerup {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    z-index: 15;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+    animation: float 2s infinite alternate ease-in-out;
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+    image-rendering: pixelated;
+}
+
+/* Four-leaf clover power-up */
+.powerup-clover {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+}
+
+.powerup-clover::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 60px;
+    height: 60px;
+    background-color: #00AA00;
+    clip-path: path('M30 10 C 20 0, 0 10, 10 30 C 0 40, 10 60, 30 50 C 40 60, 60 50, 50 30 C 60 20, 50 0, 30 10 Z');
+    box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.5), inset -2px -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.powerup-clover::after {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    width: 20px;
+    height: 20px;
+    background-color: #008800;
+    border-radius: 50%;
+    box-shadow: inset 1px 1px 3px rgba(255, 255, 255, 0.5), inset -1px -1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Pot of gold power-up */
+.powerup-gold {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+}
+
+.powerup-gold::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    width: 60px;
+    height: 40px;
+    background-color: #8B4513;
+    border-radius: 10px 10px 30px 30px;
+    box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.3), inset -2px -2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.powerup-gold::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    width: 40px;
+    height: 30px;
+    background-color: #FFD700;
+    border-radius: 50%;
+    box-shadow: 
+        -10px 10px 0 -4px #FFD700,
+        10px 10px 0 -4px #FFD700,
+        0px 20px 0 -4px #FFD700,
+        -5px 5px 0 -2px #FFA500,
+        5px 5px 0 -2px #FFA500,
+        0px 10px 0 -2px #FFA500;
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7));
+}
+
+/* Whiskey flask power-up */
+.powerup-whiskey {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+}
+
+.powerup-whiskey::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 25px;
+    width: 30px;
+    height: 60px;
+    background-color: #8B4513;
+    border-radius: 7px 7px 15px 15px;
+    box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.3), inset -2px -2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.powerup-whiskey::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 28px;
+    width: 24px;
+    height: 30px;
+    background-color: #FFA500;
+    border-radius: 5px;
+    box-shadow: inset 1px 1px 3px rgba(255, 255, 255, 0.5), inset -1px -1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Power-up collection animation */
+@keyframes collect {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.8;
+        filter: brightness(1.5);
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Power-up floating animation */
+@keyframes float {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-5px) rotate(2deg);
+    }
+    100% {
+        transform: translateY(-10px) rotate(-2deg);
+    }
+}
+
+/* Invincibility effect */
+.invincible {
+    animation: invincible 0.5s infinite alternate;
+}
+
+@keyframes invincible {
+    0% {
+        opacity: 1;
+        filter: hue-rotate(0deg) brightness(1) drop-shadow(0 0 5px gold);
+    }
+    100% {
+        opacity: 0.8;
+        filter: hue-rotate(180deg) brightness(1.5) drop-shadow(0 0 15px gold);
+    }
+}
+
+/* Drunk effect */
+.drunk {
+    animation: drunk 0.5s infinite alternate;
+}
+
+@keyframes drunk {
+    0% {
+        transform: rotate(-3deg) translateY(0);
+        filter: hue-rotate(0deg) saturate(1.2);
+    }
+    50% {
+        transform: rotate(0deg) translateY(-2px);
+        filter: hue-rotate(10deg) saturate(1.3);
+    }
+    100% {
+        transform: rotate(3deg) translateY(0);
+        filter: hue-rotate(20deg) saturate(1.4);
+    }
+}
+
+/* Stagger effect */
+.staggering {
+    animation: stagger 0.3s infinite alternate;
+}
+
+@keyframes stagger {
+    0% {
+        transform: rotate(-5deg) translateY(0);
+    }
+    50% {
+        transform: rotate(5deg) translateY(-2px);
+    }
+    100% {
+        transform: rotate(-5deg) translateY(0);
+    }
+}
+
+/* Message display animation */
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    30% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+}
+
+/* Mobile-specific elements */
+.mobile-only {
+    display: none;
+}
+
+/* Mobile controls */
+#mobile-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+    pointer-events: none;
+    background-color: transparent;
+}
+
+#jump-area {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+/* Show mobile elements on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-only {
+        display: block;
+    }
+    
+    #mobile-controls {
+        display: block !important;
+    }
+}
+
+/* Landscape mode recommendation message */
+#landscape-message {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    z-index: 1000;
+    display: none;
+}
+
+/* Media query for portrait mode on mobile */
+@media (orientation: portrait) and (max-width: 768px) {
+    #landscape-message {
+        display: block;
+    }
+}
+
+/* High Score Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #87CEEB;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    color: #000;
+    text-align: center;
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Larger high score table modal */
+.high-score-table-modal-content {
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+}
+
+.input-group {
+    margin: 20px 0;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #4CAF50;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: #fff;
+    color: #000;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.high-score-table-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 20px 0;
+    border: 2px solid #4CAF50;
+    border-radius: 5px;
+}
+
+#high-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+#high-score-table th, 
+#high-score-table td {
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 1px solid #4CAF50;
+}
+
+#high-score-table th {
+    background-color: #4CAF50;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#high-score-table tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#high-score-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Make buttons consistent */
+.modal-content button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-family: 'Press Start 2P', cursive;
+    transition: background-color 0.3s;
+}
+
+.modal-content button:hover {
+    background-color: #45a049;
+}
+
+.modal-content button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Power-up countdown styles */
+.power-up-countdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 100;
+    display: none;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.clover-countdown {
+    border: 2px solid #00FF00;
+    text-shadow: 0 0 5px #00FF00;
+}
+
+.whiskey-countdown {
+    border: 2px solid #FFA500;
+    text-shadow: 0 0 5px #FFA500;
+} 
