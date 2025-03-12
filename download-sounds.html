@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tom's Adventure - Sound Download Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .sound-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #3e8e41;
+        }
+        code {
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .instructions {
+            background-color: #ffffcc;
+            padding: 15px;
+            border-left: 5px solid #ffeb3b;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tom's Adventure - Sound Download Helper</h1>
+    
+    <div class="instructions">
+        <h2>Instructions</h2>
+        <ol>
+            <li>For each sound below, click the "Create Sound" button to generate an audio file</li>
+            <li>After hearing the sound, click "Download" to save it to your computer</li>
+            <li>Save the file to your game's <code>/sounds</code> folder with the specified filename</li>
+            <li>Repeat for all sounds required by the game</li>
+        </ol>
+    </div>
+    
+    <div class="sound-item">
+        <h3>Jump Sound</h3>
+        <p>A quick "boing" jumping sound</p>
+        <button onclick="createJumpSound()">Create Jump Sound</button>
+        <div id="jump-container"></div>
+    </div>
+    
+    <div class="sound-item">
+        <h3>Land Sound</h3>
+        <p>A soft thud when landing</p>
+        <button onclick="createLandSound()">Create Land Sound</button>
+        <div id="land-container"></div>
+    </div>
+    
+    <div class="sound-item">
+        <h3>Death Sound</h3>
+        <p>A dramatic death sound</p>
+        <button onclick="createDeathSound()">Create Death Sound</button>
+        <div id="death-container"></div>
+    </div>
+    
+    <div class="sound-item">
+        <h3>Point Sound</h3>
+        <p>A celebratory point sound</p>
+        <button onclick="createPointSound()">Create Point Sound</button>
+        <div id="point-container"></div>
+    </div>
+    
+    <div class="sound-item">
+        <h3>Powerup Sound</h3>
+        <p>A magical powerup collection sound</p>
+        <button onclick="createPowerupSound()">Create Powerup Sound</button>
+        <div id="powerup-container"></div>
+    </div>
+    
+    <div class="sound-item">
+        <h3>Joke Sound</h3>
+        <p>A playful tone for when comments appear</p>
+        <button onclick="createJokeSound()">Create Joke Sound</button>
+        <div id="joke-container"></div>
+    </div>
+    
+    <script>
+        // Audio context for generating sounds
+        let audioContext;
+        
+        // Initialize audio context on first user interaction
+        document.body.addEventListener('click', function() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }, { once: true });
+        
+        // Helper function to download a sound
+        function downloadSound(audioBuffer, filename) {
+            // Create an offline context to render the audio
+            const offlineContext = new OfflineAudioContext(1, audioBuffer.length, audioBuffer.sampleRate);
+            
+            // Create a buffer source
+            const source = offlineContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(offlineContext.destination);
+            
+            // Start the source and render
+            source.start(0);
+            offlineContext.startRendering().then(renderedBuffer => {
+                // Convert rendered buffer to WAV
+                const wav = audioBufferToWav(renderedBuffer);
+                const blob = new Blob([wav], { type: 'audio/wav' });
+                
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = filename;
+                downloadLink.innerHTML = 'Download ' + filename;
+                downloadLink.className = 'download-link';
+                downloadLink.style.marginLeft = '10px';
+                
+                return { downloadLink, url, blob };
+            }).then(({ downloadLink, url, blob }) => {
+                // Create audio element to play the sound
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = url;
+                
+                // Add to page
+                const container = document.getElementById(filename.split('.')[0] + '-container');
+                container.innerHTML = '';
+                container.appendChild(audio);
+                container.appendChild(downloadLink);
+                
+                // Clean up URL when done
+                downloadLink.addEventListener('click', () => {
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                });
+            });
+        }
+        
+        // Jump Sound
+        function createJumpSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const duration = 0.3;
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Create a boing sound
+            for (let i = 0; i < buffer.length; i++) {
+                const time = i / audioContext.sampleRate;
+                const frequency = 600 - 300 * time / duration; // Descending pitch
+                data[i] = 0.5 * Math.sin(frequency * 2 * Math.PI * time) * Math.exp(-4 * time / duration);
+            }
+            
+            // Play the sound
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            // Provide download button
+            downloadSound(buffer, 'jump.mp3');
+        }
+        
+        // Land Sound
+        function createLandSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const duration = 0.2;
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Create a thud sound
+            for (let i = 0; i < buffer.length; i++) {
+                const time = i / audioContext.sampleRate;
+                const frequency = 150; // Low frequency
+                data[i] = 0.5 * Math.sin(frequency * 2 * Math.PI * time) * Math.exp(-10 * time / duration);
+            }
+            
+            // Play the sound
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            // Provide download button
+            downloadSound(buffer, 'land.mp3');
+        }
+        
+        // Death Sound
+        function createDeathSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const duration = 0.8;
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Create a dramatic death sound
+            for (let i = 0; i < buffer.length; i++) {
+                const time = i / audioContext.sampleRate;
+                let frequency;
+                
+                if (time < 0.1) {
+                    frequency = 400;
+                } else if (time < 0.3) {
+                    frequency = 300 - 200 * (time - 0.1) / 0.2;
+                } else {
+                    frequency = 100 - 50 * (time - 0.3) / 0.5;
+                }
+                
+                data[i] = 0.5 * Math.sin(frequency * 2 * Math.PI * time) * Math.exp(-2 * time / duration);
+                
+                // Add some noise
+                if (time > 0.2) {
+                    data[i] += 0.2 * Math.random() * Math.exp(-3 * time / duration);
+                }
+            }
+            
+            // Play the sound
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            // Provide download button
+            downloadSound(buffer, 'death.mp3');
+        }
+        
+        // Point Sound
+        function createPointSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const duration = 0.3;
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Create a celebratory point sound
+            for (let i = 0; i < buffer.length; i++) {
+                const time = i / audioContext.sampleRate;
+                const frequency1 = 500 + 200 * time / duration; // Ascending pitch
+                const frequency2 = 800 + 300 * time / duration; // Second tone
+                
+                data[i] = 0.3 * Math.sin(frequency1 * 2 * Math.PI * time) * Math.exp(-1 * time / duration) +
+                          0.2 * Math.sin(frequency2 * 2 * Math.PI * time) * Math.exp(-2 * time / duration);
+            }
+            
+            // Play the sound
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            // Provide download button
+            downloadSound(buffer, 'point.mp3');
+        }
+        
+        // Powerup Sound
+        function createPowerupSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const duration = 0.5;
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Create a magical powerup sound
+            for (let i = 0; i < buffer.length; i++) {
+                const time = i / audioContext.sampleRate;
+                const frequency1 = 300 + 600 * time / duration; // Rising sweep
+                const frequency2 = 600 + 900 * time / duration; // Second tone
+                
+                data[i] = 0.3 * Math.sin(frequency1 * 2 * Math.PI * time) * Math.exp(-1 * time / duration) +
+                          0.2 * Math.sin(frequency2 * 2 * Math.PI * time) * Math.exp(-0.5 * time / duration);
+                          
+                // Add a bit of shimmer
+                if (time > 0.1) {
+                    data[i] += 0.1 * Math.sin(1500 * 2 * Math.PI * time) * Math.sin(20 * time) * Math.exp(-1 * time / duration);
+                }
+            }
+            
+            // Play the sound
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            // Provide download button
+            downloadSound(buffer, 'powerup.mp3');
+        }
+        
+        // Joke Sound
+        function createJokeSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const duration = 0.4;
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Create a playful tone
+            for (let i = 0; i < buffer.length; i++) {
+                const time = i / audioContext.sampleRate;
+                const note1 = 400;
+                const note2 = 600;
+                
+                if (time < duration / 2) {
+                    data[i] = 0.3 * Math.sin(note1 * 2 * Math.PI * time) * Math.exp(-2 * time / duration);
+                } else {
+                    data[i] = 0.3 * Math.sin(note2 * 2 * Math.PI * time) * Math.exp(-2 * time / duration);
+                }
+            }
+            
+            // Play the sound
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            // Provide download button
+            downloadSound(buffer, 'joke.mp3');
+        }
+        
+        // Helper function to convert AudioBuffer to WAV format
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const length = buffer.length * numChannels * 2;
+            const sampleRate = buffer.sampleRate;
+            const arrayBuffer = new ArrayBuffer(44 + length);
+            const view = new DataView(arrayBuffer);
+            
+            // Write WAV header
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + length, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * 2, true);
+            view.setUint16(32, numChannels * 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, length, true);
+            
+            // Write PCM audio data
+            const channelData = [];
+            for (let i = 0; i < numChannels; i++) {
+                channelData.push(buffer.getChannelData(i));
+            }
+            
+            let offset = 44;
+            for (let i = 0; i < buffer.length; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    const sample = Math.max(-1, Math.min(1, channelData[channel][i]));
+                    const int16 = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                    view.setInt16(offset, int16, true);
+                    offset += 2;
+                }
+            }
+            
+            return arrayBuffer;
+        }
+        
+        // Helper to write a string to a DataView
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1169,7 +1169,9 @@ const PowerUpManager = {
         const rightEdge = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
         
         // Check if we should spawn a power-up based on minimum distance
-        if (rightEdge - this.lastPowerUpX < CONFIG.POWERUP.MIN_DISTANCE) {
+        // Compare with the actual game viewport, not the last power-up position
+        // BUGFIX: Check if this is the first power-up, or if enough distance has passed
+        if (this.powerUps.length > 0 && rightEdge - this.lastPowerUpX < CONFIG.POWERUP.MIN_DISTANCE) {
             return; // Don't spawn if too close to the last power-up
         }
         
@@ -1391,6 +1393,7 @@ const PowerUpManager = {
         Game.speedIncreaseStartTime = Date.now();
         Game.speedIncreaseStartValue = Game.speed;
         Game.targetSpeed = targetSpeed;
+        Game.powerUpSpeedChange = true; // Mark this as a power-up speed change
         
         // Use a shorter duration for power-up (1 second) for more immediate feedback
         Game.speedIncreaseDuration = 1000;
@@ -1411,6 +1414,7 @@ const PowerUpManager = {
             Game.speedIncreaseStartValue = Game.speed;
             Game.targetSpeed = Player.originalSpeed;
             Game.speedIncreaseDuration = 1000; // 1 second for power-up deactivation
+            Game.powerUpSpeedChange = true; // Mark this as a power-up speed change
             
             // Remove visual drunk effects
             Player.element.classList.remove('drunk');

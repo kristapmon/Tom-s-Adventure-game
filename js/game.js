@@ -62,8 +62,8 @@ const Game = {
         SunManager.init();
         PowerUpManager.init(); // Initialize power-ups
         
-        // Initialize jokes system
-        JokesManager.init();
+        // Initialize comments system
+        CommentsManager.init();
         
         // Initialize audio
         if (typeof AudioManager !== 'undefined') {
@@ -618,9 +618,9 @@ const Game = {
         // Ensure player is at the correct height
         Player.ensureCorrectHeight();
         
-        // Start jokes
-        JokesManager.init();
-        JokesManager.startJokes();
+        // Start comments
+        CommentsManager.init();
+        CommentsManager.startComments();
         
         // Start game loop
         this.startGameLoop();
@@ -682,12 +682,24 @@ const Game = {
             const elapsedTime = currentTime - this.speedIncreaseStartTime;
             
             if (elapsedTime < this.speedIncreaseDuration) {
-                // Calculate progress (0 to 1) and apply easing
+                // Calculate progress (0 to 1)
                 const progress = elapsedTime / this.speedIncreaseDuration;
-                // Using easeInOut for smoother acceleration
-                const easedProgress = progress < 0.5 
-                    ? 2 * progress * progress 
-                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                // Using a more dramatic easing function for speed increases
+                // This creates a more noticeable acceleration curve
+                let easedProgress;
+                
+                // More dramatic acceleration at the beginning
+                if (progress < 0.4) {
+                    // Ease in cubic - accelerates quickly at first
+                    easedProgress = 3 * Math.pow(progress, 2) - 2 * Math.pow(progress, 3);
+                } else if (progress < 0.8) {
+                    // Plateau in the middle for player to adjust
+                    easedProgress = 0.4 + (progress - 0.4) * 0.5;
+                } else {
+                    // Final push to target speed
+                    easedProgress = 0.6 + (progress - 0.8) * 2;
+                }
                 
                 // Set current speed based on progress
                 this.speed = this.speedIncreaseStartValue + 
@@ -732,11 +744,11 @@ const Game = {
                     }, 500);
                     
                     // Add bonus points for smashing a troll while invincible
-                    this.score += 25;
+                    this.score += CONFIG.POWER_UPS.EFFECTS.CLOVER.TROLL_POINTS;
                     this.updateScoreDisplay();
                     
                     if (window.GameLogger) {
-                        GameLogger.info('Smashed troll while invincible (+25 points)');
+                        GameLogger.info(`Smashed troll while invincible (+${CONFIG.POWER_UPS.EFFECTS.CLOVER.TROLL_POINTS} points)`);
                     }
                 }
             }
@@ -765,25 +777,38 @@ const Game = {
         PowerUpManager.update();
         PowerUpManager.checkSpawn();
         
-        // Update joke bubble position
-        JokesManager.updateBubblePosition();
+        // Update comment bubble position
+        CommentsManager.updateBubblePosition();
         
         // Increase speed based on score
-        if (this.score > 0 && this.score % CONFIG.SPEED_INCREMENT_SCORE === 0 && !this.speedIncreaseInProgress) {
-            // Calculate new target speed
-            this.targetSpeed = this.speed + CONFIG.SPEED_INCREMENT;
-            
-            // Start gradual speed increase
-            this.speedIncreaseInProgress = true;
-            this.speedIncreaseStartTime = Date.now();
-            this.speedIncreaseStartValue = this.speed;
-            
-            if (this.debugMode) {
-                console.log(`Starting gradual speed increase to ${this.targetSpeed}`);
+        if (this.score > 0 && this.score % CONFIG.SPEED_INCREMENT_SCORE === 0) {
+            // Only start a new speed increase if not already increasing due to a score increment
+            // (but allow speed changes from power-ups to coexist with score-based increases)
+            const isScoreBasedSpeedIncreaseInProgress = 
+                this.speedIncreaseInProgress && 
+                this.speedIncreaseStartTime && 
+                !this.powerUpSpeedChange;
+                
+            if (!isScoreBasedSpeedIncreaseInProgress) {
+                // Save current target speed if there's a power-up active
+                if (this.speedIncreaseInProgress && this.powerUpSpeedChange) {
+                    // Store the current target for when the power-up ends
+                    this.powerUpOriginalTargetSpeed = this.targetSpeed;
+                }
+                
+                // Calculate new target speed with a more dramatic increase
+                this.targetSpeed = this.speed + CONFIG.SPEED_INCREMENT;
+                
+                // Start gradual speed increase
+                this.speedIncreaseInProgress = true;
+                this.speedIncreaseStartTime = Date.now();
+                this.speedIncreaseStartValue = this.speed;
+                this.speedIncreaseDuration = 3000; // Ensure exactly 3 seconds for the transition
+                this.powerUpSpeedChange = false; // Mark this as a score-based increase, not a power-up
+                
+                // Show a prominent message about the speed increase
+                this.showMessage("Speed increasing!", 2000, true);
             }
-            
-            // Show a speed up message
-            this.showMessage('Speed increasing!', 1000);
         }
         
         // Apply drunk effect if active
@@ -849,6 +874,15 @@ const Game = {
         // Log game over
         if (window.GameLogger) {
             GameLogger.info(`Game over with score: ${this.score}`);
+        }
+        
+        // Record game in stats
+        if (typeof GameStats !== 'undefined') {
+            GameStats.recordGamePlayed(this.score);
+            
+            if (window.GameLogger && this.debugMode) {
+                GameLogger.debug('Game recorded in statistics');
+            }
         }
         
         // Stop score counter
@@ -1017,7 +1051,7 @@ const Game = {
         TreeManager.cleanup();
         SunManager.cleanup();
         PowerUpManager.cleanup(); // Clean up power-ups
-        JokesManager.clearIntervals();
+        CommentsManager.clearIntervals();
         
         // Reset player state
         Player.isInvincible = false;
@@ -1039,16 +1073,16 @@ const Game = {
             Player.jumpDelayTimeout = null;
         }
         
-        // Reset joke bubble
-        const jokeBubble = document.getElementById('joke-bubble');
-        if (jokeBubble) {
-            jokeBubble.style.display = 'none';
+        // Reset comment bubble
+        const commentBubble = document.getElementById('comment-bubble');
+        if (commentBubble) {
+            commentBubble.style.display = 'none';
         }
         
-        // Reset joke bubble container
-        const jokeBubbleContainer = document.getElementById('joke-bubble-container');
-        if (jokeBubbleContainer) {
-            jokeBubbleContainer.innerHTML = '';
+        // Reset comment bubble container
+        const commentBubbleContainer = document.getElementById('comment-bubble-container');
+        if (commentBubbleContainer) {
+            commentBubbleContainer.innerHTML = '';
         }
         
         // Remove message display if it exists
@@ -1116,7 +1150,7 @@ const Game = {
             Player.legAnimationInterval = null;
         }
         
-        JokesManager.clearIntervals();
+        CommentsManager.clearIntervals();
         
         if (this.debugMode) {
             console.log("Game state forcefully reset");
@@ -1160,10 +1194,10 @@ const Game = {
             player.style.transform = 'translateZ(10px)';
         }
         
-        // Clear joke bubble container
-        const jokeBubbleContainer = document.getElementById('joke-bubble-container');
-        if (jokeBubbleContainer) {
-            jokeBubbleContainer.innerHTML = '';
+        // Clear comment bubble container
+        const commentBubbleContainer = document.getElementById('comment-bubble-container');
+        if (commentBubbleContainer) {
+            commentBubbleContainer.innerHTML = '';
         }
         
         // Remove any other game elements that might be lingering
@@ -1275,8 +1309,9 @@ const Game = {
      * Show a temporary message during gameplay
      * @param {string} message - The message to display
      * @param {number} duration - How long to show the message (ms)
+     * @param {boolean} isProminent - Whether to show as a prominent message
      */
-    showMessage: function(message, duration = 2000) {
+    showMessage: function(message, duration = 2000, isProminent = false) {
         // Remove any existing message
         let messageDisplay = document.getElementById('message-display');
         if (messageDisplay) {
@@ -1291,13 +1326,13 @@ const Game = {
         messageDisplay.style.top = '30%';
         messageDisplay.style.left = '50%';
         messageDisplay.style.transform = 'translate(-50%, -50%)';
-        messageDisplay.style.color = '#FFFFFF';
-        messageDisplay.style.fontSize = '24px';
+        messageDisplay.style.color = isProminent ? '#FF0000' : '#FFFFFF'; // Red for prominent messages
+        messageDisplay.style.fontSize = isProminent ? '36px' : '24px'; // Larger for prominent messages
         messageDisplay.style.fontFamily = "'Press Start 2P', cursive";
         messageDisplay.style.textShadow = '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000';
         messageDisplay.style.zIndex = '100';
         messageDisplay.style.textAlign = 'center';
-        messageDisplay.style.animation = 'fadeInOut 2s forwards';
+        messageDisplay.style.animation = isProminent ? 'pulseMessage 2s forwards' : 'fadeInOut 2s forwards';
         
         // Add to game container
         document.getElementById('game-container').appendChild(messageDisplay);
@@ -1308,11 +1343,13 @@ const Game = {
         }
         
         // Set timeout to remove message
-        this.messageTimeout = setTimeout(() => {
-            if (messageDisplay && messageDisplay.parentNode) {
-                messageDisplay.parentNode.removeChild(messageDisplay);
-            }
-        }, duration);
+        if (duration > 0) {
+            this.messageTimeout = setTimeout(() => {
+                if (messageDisplay && messageDisplay.parentNode) {
+                    messageDisplay.parentNode.removeChild(messageDisplay);
+                }
+            }, duration);
+        }
     },
     
     // Add method to create power-up countdown elements

@@ -27,6 +27,15 @@
         }
     </style>
 </head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7R1MBYFYLF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-7R1MBYFYLF');
+</script>
 <body>
     <!-- Landscape mode recommendation message -->
     <div id="landscape-message">
@@ -77,6 +86,9 @@
             <div class="setting">
                 <button id="export-logs">Export Logs</button>
             </div>
+            <div class="setting">
+                <button id="stats-btn">STATS</button>
+            </div>
             <button id="back-btn">Back</button>
         </div>
         
@@ -101,7 +113,7 @@
         <div id="player"></div>
         <div id="ground"></div>
         <div id="mountains"></div>
-        <div id="joke-bubble-container"></div>
+        <div id="comment-bubble-container"></div>
         
         <!-- Mobile controls overlay -->
         <div id="mobile-controls" class="hidden">
@@ -143,24 +155,45 @@
         </div>
     </div>
 
+    <div id="stats-modal" class="modal">
+        <div class="modal-content">
+            <h2>Game Statistics</h2>
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-label">Games Played (Local):</div>
+                    <div id="local-games-count" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Games Played (Global):</div>
+                    <div id="global-games-count" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Unique Players:</div>
+                    <div id="unique-players" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Average Score:</div>
+                    <div id="average-score" class="stat-value">0</div>
+                </div>
+            </div>
+            <button id="close-stats">Close</button>
+        </div>
+    </div>
+
+    <!-- Audio elements (preload="none" to avoid unnecessary downloads until needed) -->
+    <audio id="jump-sound" preload="none" src="./sounds/jump.mp3"></audio>
+    <audio id="land-sound" preload="none" src="./sounds/land.mp3"></audio>
+    <audio id="death-sound" preload="none" src="./sounds/death.mp3"></audio>
+    <audio id="point-sound" preload="none" src="./sounds/point.mp3"></audio>
+    <audio id="powerup-sound" preload="none" src="./sounds/powerup.mp3"></audio>
+    <audio id="joke-sound" preload="none" src="./sounds/joke.mp3"></audio>
+
     <!-- Scripts with explicit relative paths -->
     <script src="./js/config.js"></script>
     <script src="./js/logger.js"></script>
-    <script>
-        // Mock AudioManager to prevent errors
-        const AudioManager = {
-            play: function(soundName) {
-                console.log('Playing sound:', soundName);
-                GameLogger.debug(`Playing sound: ${soundName}`);
-            },
-            init: function() {
-                console.log('Audio initialized');
-                GameLogger.info('Audio system initialized');
-            }
-        };
-    </script>
+    <script src="./js/audio.js"></script>
     <script src="./js/entities.js"></script>
-    <script src="./js/jokes.js"></script>
+    <script src="./js/comments.js"></script>
     <script src="./js/game.js"></script>
 
     <!-- Add Firebase SDK before your game scripts -->
@@ -169,5 +202,53 @@
 
     <!-- Add the highscores.js script -->
     <script src="./js/highscores.js"></script>
+    
+    <!-- Add the stats.js script -->
+    <script src="./js/stats.js"></script>
+    
+    <script>
+        // Initialize audio on any user interaction with the page
+        function initAudioOnInteraction() {
+            if (typeof AudioManager !== 'undefined') {
+                AudioManager.init();
+                console.log('Audio initialized on user interaction');
+                // Remove the event listeners once audio is initialized
+                document.removeEventListener('click', initAudioOnInteraction);
+                document.removeEventListener('keydown', initAudioOnInteraction);
+                document.removeEventListener('touchstart', initAudioOnInteraction);
+            }
+        }
+        
+        // Add event listeners for user interaction
+        document.addEventListener('click', initAudioOnInteraction);
+        document.addEventListener('keydown', initAudioOnInteraction);
+        document.addEventListener('touchstart', initAudioOnInteraction);
+        
+        // Also initialize when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Make sure all buttons also initialize audio
+            const interactiveElements = [
+                'start-btn', 'high-scores-btn', 'settings-btn', 
+                'restart-btn', 'menu-btn', 'back-btn',
+                'death-restart', 'death-menu', 'death-high-scores'
+            ];
+            
+            interactiveElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('click', initAudioOnInteraction);
+                }
+            });
+            
+            // Also initialize audio when the game starts
+            if (typeof Game !== 'undefined' && Game.start) {
+                const originalStart = Game.start;
+                Game.start = function() {
+                    initAudioOnInteraction();
+                    originalStart.apply(Game, arguments);
+                };
+            }
+        });
+    </script>
 </body>
 </html> 

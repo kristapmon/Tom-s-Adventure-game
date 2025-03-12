@@ -11,9 +11,9 @@ const CONFIG = {
     FLOAT_POWER: 0.3,
     MAX_FLOAT_TIME: 30,
     BASE_SPEED: 5,
-    SPEED_INCREMENT: 0.5,
+    SPEED_INCREMENT: 0.8,
     SPEED_INCREMENT_SCORE: 500,
-    JOKE_DISPLAY_TIME: 4000,
+    JOKE_DISPLAY_TIME: 5000,
     DEATH_SCREEN_TIME: 5000,
     
     // Difficulty settings
@@ -23,21 +23,21 @@ const CONFIG = {
             SPEED_MULTIPLIER: 0.8,
             GRAVITY_MULTIPLIER: 0.9,
             JUMP_POWER_MULTIPLIER: 1.2,
-            POWERUP_SPAWN_RATE: 0.008
+            POWERUP_SPAWN_RATE: 0.015
         },
         medium: {
             TROLL_SPAWN_RATE: 0.030,
             SPEED_MULTIPLIER: 1.0,
             GRAVITY_MULTIPLIER: 1.0,
             JUMP_POWER_MULTIPLIER: 1.0,
-            POWERUP_SPAWN_RATE: 0.01
+            POWERUP_SPAWN_RATE: 0.012
         },
         hard: {
             TROLL_SPAWN_RATE: 0.020,
             SPEED_MULTIPLIER: 1.2,
             GRAVITY_MULTIPLIER: 1.1,
             JUMP_POWER_MULTIPLIER: 0.9,
-            POWERUP_SPAWN_RATE: 0.004
+            POWERUP_SPAWN_RATE: 0.008
         }
     },
     
@@ -63,7 +63,7 @@ const CONFIG = {
         MIN_BOTTOM: 50,  // Minimum height from ground
         MAX_BOTTOM: 150, // Maximum height from ground
         LIFESPAN: 8000,  // How long power-ups stay on screen if not collected (ms)
-        MIN_DISTANCE: 400,
+        MIN_DISTANCE: 300, // Reduced from 400 to allow more frequent spawning
         TYPES: {
             CLOVER: {
                 NAME: 'clover',
@@ -109,7 +109,8 @@ const CONFIG = {
     // Local storage keys
     STORAGE_KEYS: {
         HIGH_SCORE: 'toms_adventure_high_score',
-        SETTINGS: 'toms_adventure_settings'
+        SETTINGS: 'toms_adventure_settings',
+        STATS: 'toms_adventure_stats'
     },
     
     // Update power-up configurations
@@ -117,8 +118,8 @@ const CONFIG = {
         TYPES: ['clover', 'gold', 'whiskey'],
         WIDTH: 80,
         HEIGHT: 80,
-        SPAWN_RATE: 0.005, // Chance per frame
-        MIN_DISTANCE: 500, // Minimum distance between power-ups
+        SPAWN_RATE: 0.01, // Increased from 0.005 for more frequent spawns
+        MIN_DISTANCE: 300, // Reduced from 500 to be consistent with POWERUP.MIN_DISTANCE
         EFFECTS: {
             CLOVER: {
                 DURATION: 10000, // 10 seconds (increased from 3)

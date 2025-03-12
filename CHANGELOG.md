@@ -4,6 +4,70 @@ This file documents all notable changes to Tom's Adventure game.
 
 ## [Unreleased]
 
+### Added
+- Added functional sound effects for all game actions (jumping, dying, collecting points, etc.)
+- Game statistics tracking for both local and global play
+- New STATS button in Settings to view game statistics
+- Display of total games played, unique players count, and average score
+- Firebase integration for global statistics tracking
+- Gradual speed transition system with a custom easing function for smoother gameplay
+- Visual notifications when speed increases occur
+- Enhanced whiskey power-up with smoother speed transition
+- Replaced dad jokes with short Irish, countryside, and troll-themed comments
+- More dramatic and noticeable speed increases with visual effects
+- Gradual speed transition system that smoothly accelerates game speed over 3 seconds
+- Speed increase visual notification with "Speed increasing!" message
+- Enhanced whiskey power-up with smooth speed transitions when activated and deactivated
+- Increased spawn rates for power-ups across all difficulty levels for more frequent collection opportunities
+- Doubled troll spawn rates with proper spacing maintained for optimal gameplay balance
+- Reduced minimum distance between power-ups from 500px to 300px
+- Improved trolls minimum spacing to ensure proper jump distances between them
+- Visual layering fixes to ensure trees appear in front of mountains
+- Fixed mountain triangle shapes on mobile devices
+- Shortened comment display time for better gameplay flow
+- Increased speed increment from 0.5 to 0.8 for more dramatic progression
+- Speed increase notifications are more prominent with pulsing red/yellow text
+- Whiskey power-up now increases speed more smoothly
+- Adjusted power-up spawn rates to improve gameplay variety
+- Reduced minimum distance between power-ups from 400px to 300px
+- Sound generation tools to create custom game audio effects
+- Sound resource page with links to free sound effects for the game
+- Improved audio initialization to ensure sounds play on first interaction
+- Multiple audio initialization points to guarantee sound playback across browsers
+
+### Changed
+- Increased speed increment amount from 0.5 to 0.8 for more challenging gameplay
+- Added dramatic speed increase curve with rapid acceleration, plateau, and final burst
+- Enhanced speed increase notifications with pulsing red/yellow text and larger font
+- Increased spawn rates for power-ups across all difficulty levels for more frequent collection opportunities
+- Doubled troll spawn rates with proper spacing maintained for optimal gameplay balance
+- Reduced minimum distance between power-ups from 500px to 300px
+- Improved trolls minimum spacing to ensure proper jump distances between them
+- Visual layering fixes to ensure trees appear in front of mountains
+- Fixed mountain triangle shapes on mobile devices
+- Shortened comment display time for better gameplay flow
+- Increased speed increment from 0.5 to 0.8 for more dramatic progression
+- Speed increase notifications are more prominent with pulsing red/yellow text
+- Whiskey power-up now increases speed more smoothly
+- Adjusted power-up spawn rates to improve gameplay variety
+- Reduced minimum distance between power-ups from 400px to 300px
+- Enhanced audio system with improved initialization on user interaction
+- Audio elements now preload when user first interacts with the game
+- Sound toggle in settings now properly initializes and controls all game sounds
+
+### Fixed
+- Fixed bug with power-up spawning where only the first power-up would appear
+- "Play Again" button now properly disabled until high score check is complete
+- Mountains now maintain their triangular shape on mobile devices
+- Fixed z-index issues where mountains were appearing in front of trees
+- Fixed power-up spawning issue that prevented multiple power-ups from appearing
+- Fixed bug where speed increases wouldn't occur while a power-up was active
+- Fixed incorrect points (500 instead of 10) when hitting trolls with the clover power-up
+- Fixed visual layering issues with the comment bubble
+- Fixed audio not playing on game start by adding multiple initialization points
+- Fixed browser autoplay policy issues with sound by initializing audio on user interaction
+- Fixed missing sound effects for land and powerup actions
+
 ## [1.6.1] - 2023-11-14
 
 ### Added

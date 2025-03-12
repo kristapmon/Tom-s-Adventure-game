@@ -6,8 +6,10 @@
 const AudioManager = {
     sounds: {
         jump: document.getElementById('jump-sound'),
+        land: document.getElementById('land-sound'),
         death: document.getElementById('death-sound'),
         point: document.getElementById('point-sound'),
+        powerup: document.getElementById('powerup-sound'),
         joke: document.getElementById('joke-sound')
     },
     
@@ -41,7 +43,11 @@ const AudioManager = {
     init: function() {
         // Preload all sounds
         Object.values(this.sounds).forEach(sound => {
-            sound.load();
+            if (sound) {
+                sound.load();
+            } else {
+                console.warn('Missing sound element in AudioManager initialization');
+            }
         });
         
         // Set up event listener for sound toggle
@@ -51,6 +57,10 @@ const AudioManager = {
                 CONFIG.SOUND_ENABLED = this.checked;
                 updateSoundSetting();
             });
+        }
+
+        if (window.GameLogger) {
+            GameLogger.info('Audio system initialized');
         }
     }
 };
