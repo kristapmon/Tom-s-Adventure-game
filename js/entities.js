@@ -440,7 +440,7 @@ const TrollManager = {
     trolls: [],
     nextId: 0,
     lastTrollTime: 0,
-    minTrollSpacing: 300, // Minimum spacing between trolls in pixels
+    minTrollSpacing: 250, // Increased from 300 to ensure jumpable gaps
     
     /**
      * Initialize the troll manager
@@ -461,7 +461,7 @@ const TrollManager = {
         // Create troll object
         const troll = {
             id: trollId,
-            x: xPos || window.innerWidth + Math.random() * 200,
+            x: xPos || (Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth) + Math.random() * 200,
             element: null
         };
         
@@ -544,20 +544,23 @@ const TrollManager = {
         const timeSinceLastTroll = currentTime - this.lastTrollTime;
         const minTimeBetweenTrolls = this.minTrollSpacing / Game.speed; // Convert pixels to time
         
+        // Get appropriate spawn position based on device
+        const rightEdge = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
+        
         // Check if any trolls are too close to the right edge
         let trollTooClose = false;
         for (let i = 0; i < this.trolls.length; i++) {
             const troll = this.trolls[i];
-            if (troll.x > window.innerWidth - this.minTrollSpacing) {
+            if (troll.x > rightEdge - this.minTrollSpacing) {
                 trollTooClose = true;
                 break;
             }
         }
         
         // Only spawn if:
-        // 1. Random chance based on difficulty
+        // 1. Random chance based on difficulty (higher spawn rate)
         // 2. Enough time has passed since last troll
-        // 3. No trolls are too close to the right edge
+        // 3. No trolls are too close to the right edge (enforced minimum distance)
         if (Math.random() < spawnProbability && 
             timeSinceLastTroll > minTimeBetweenTrolls && 
             !trollTooClose) {
@@ -627,7 +630,7 @@ const TreeManager = {
         this.nextId = 0;
         
         // Create initial trees across the screen
-        const screenWidth = window.innerWidth;
+        const screenWidth = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
         const numInitialTrees = 15; // More trees for better distribution
         
         for (let i = 0; i < numInitialTrees; i++) {
@@ -651,7 +654,7 @@ const TreeManager = {
         // Create tree object
         const tree = {
             id: treeId,
-            x: xPos || window.innerWidth + Math.random() * 200,
+            x: xPos || (Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth) + Math.random() * 200,
             type: treeType,
             size: 50 + Math.random() * 50, // Random size between 50-100px
             depth: Math.random() * 100 - 200, // Random depth for parallax effect
@@ -668,7 +671,8 @@ const TreeManager = {
         treeElement.style.width = `${tree.size}px`;
         treeElement.style.height = `${tree.size * 2}px`;
         treeElement.style.transform = `translateZ(${tree.depth}px)`;
-        treeElement.style.zIndex = Math.floor(tree.depth);
+        // Ensure trees are always in front of mountains regardless of depth
+        treeElement.style.zIndex = Math.max(11, Math.floor(tree.depth) + 20);
         
         // Create tree HTML based on type
         let treeHTML = '';
@@ -759,14 +763,20 @@ const TreeManager = {
                 }
                 this.trees.splice(i, 1);
                 
+                // Get appropriate spawn position based on device
+                const rightEdge = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
+                
                 // Create a new tree
-                this.createTree(window.innerWidth + Math.random() * 200);
+                this.createTree(rightEdge + Math.random() * 200);
             }
         }
         
         // Check if we need more trees
         if (this.trees.length < 15) {
-            this.createTree(window.innerWidth + Math.random() * 200);
+            // Get appropriate spawn position based on device
+            const rightEdge = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
+            
+            this.createTree(rightEdge + Math.random() * 200);
         }
     },
     
@@ -866,7 +876,7 @@ const CloudManager = {
         this.nextId = 0;
         
         // Create initial clouds distributed across the screen
-        const screenWidth = window.innerWidth;
+        const screenWidth = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
         const numInitialClouds = 10; // Increased from 5 to 10
         
         for (let i = 0; i < numInitialClouds; i++) {
@@ -888,7 +898,7 @@ const CloudManager = {
         // Create cloud object
         const cloud = {
             id: cloudId,
-            x: xPos !== undefined ? xPos : window.innerWidth + Math.random() * 200,
+            x: xPos !== undefined ? xPos : (Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth) + Math.random() * 200,
             y: yPos !== undefined ? yPos : 50 + Math.random() * 150,
             size: CONFIG.CLOUD.MIN_SIZE + Math.random() * (CONFIG.CLOUD.MAX_SIZE - CONFIG.CLOUD.MIN_SIZE),
             speed: CONFIG.CLOUD.MIN_SPEED + Math.random() * (CONFIG.CLOUD.MAX_SPEED - CONFIG.CLOUD.MIN_SPEED),
@@ -996,10 +1006,13 @@ const MountainManager = {
     createMountain: function(xPos) {
         const mountainId = this.nextId++;
         
+        // Check if on mobile
+        const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+        
         // Create mountain object
         const mountain = {
             id: mountainId,
-            x: xPos || window.innerWidth + Math.random() * 500,
+            x: xPos || (Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth) + Math.random() * 500,
             size: 150 + Math.random() * 100, // Size between 150-250 (larger)
             depth: Math.random() * 100 - 150, // Depth between -150 and -50
             element: null
@@ -1011,13 +1024,25 @@ const MountainManager = {
         mountainElement.id = `mountain-${mountainId}`;
         mountainElement.style.left = `${mountain.x}px`;
         
-        // Scale mountain based on size
-        const scale = mountain.size / 150;
-        mountainElement.style.transform = `translateZ(${mountain.depth}px) scale(${scale})`;
-        
-        // Adjust color based on depth for 3D effect
-        const baseColor = 107 + (mountain.depth + 150) / 250 * 30;
-        mountainElement.style.borderBottomColor = `rgb(${baseColor - 50}, ${baseColor}, ${baseColor - 70})`;
+        // For mobile, ensure mountains maintain proper triangle shape
+        if (isMobile) {
+            mountainElement.style.width = '0';
+            mountainElement.style.height = '0';
+            mountainElement.style.transform = `translateZ(${mountain.depth}px)`;
+            
+            // Ensure constant triangle sizes on mobile
+            mountainElement.style.borderLeft = '150px solid transparent';
+            mountainElement.style.borderRight = '150px solid transparent';
+            mountainElement.style.borderBottom = '200px solid #6B8E23';
+        } else {
+            // Scale mountain based on size for desktop
+            const scale = mountain.size / 150;
+            mountainElement.style.transform = `translateZ(${mountain.depth}px) scale(${scale})`;
+            
+            // Adjust color based on depth for 3D effect
+            const baseColor = 107 + (mountain.depth + 150) / 250 * 30;
+            mountainElement.style.borderBottomColor = `rgb(${baseColor - 50}, ${baseColor}, ${baseColor - 70})`;
+        }
         
         // Add to mountains container
         document.getElementById('mountains').appendChild(mountainElement);
@@ -1140,8 +1165,11 @@ const PowerUpManager = {
      * Create a new power-up
      */
     createPowerUp: function() {
+        // Get appropriate spawn position based on device
+        const rightEdge = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
+        
         // Check if we should spawn a power-up based on minimum distance
-        if (window.innerWidth - this.lastPowerUpX < CONFIG.POWERUP.MIN_DISTANCE) {
+        if (rightEdge - this.lastPowerUpX < CONFIG.POWERUP.MIN_DISTANCE) {
             return; // Don't spawn if too close to the last power-up
         }
         
@@ -1173,10 +1201,9 @@ const PowerUpManager = {
         const powerUp = {
             id: powerUpId,
             type: type,
-            x: window.innerWidth,
+            x: rightEdge,
             bottom: bottom,
             collected: false,
-            element: null,
             createdAt: Date.now(),
             expiresAt: Date.now() + CONFIG.POWERUP.LIFESPAN
         };
@@ -1356,8 +1383,17 @@ const PowerUpManager = {
         // Store original speed
         Player.originalSpeed = Game.speed;
         
-        // Increase game speed
-        Game.speed *= CONFIG.POWERUP.TYPES.WHISKEY.SPEED_MULTIPLIER;
+        // Calculate target speed for whiskey effect (for gradual increase)
+        const targetSpeed = Game.speed * CONFIG.POWERUP.TYPES.WHISKEY.SPEED_MULTIPLIER;
+        
+        // Set up gradual speed increase
+        Game.speedIncreaseInProgress = true;
+        Game.speedIncreaseStartTime = Date.now();
+        Game.speedIncreaseStartValue = Game.speed;
+        Game.targetSpeed = targetSpeed;
+        
+        // Use a shorter duration for power-up (1 second) for more immediate feedback
+        Game.speedIncreaseDuration = 1000;
         
         // Show message
         Game.showMessage('Whoa! Feeling tipsy!', 2000);
@@ -1369,19 +1405,24 @@ const PowerUpManager = {
         
         // Set timeout to remove drunk effect
         Player.drunkTimeout = setTimeout(() => {
+            // Start gradual transition back to original speed
+            Game.speedIncreaseInProgress = true;
+            Game.speedIncreaseStartTime = Date.now();
+            Game.speedIncreaseStartValue = Game.speed;
+            Game.targetSpeed = Player.originalSpeed;
+            Game.speedIncreaseDuration = 1000; // 1 second for power-up deactivation
+            
+            // Remove visual drunk effects
             Player.element.classList.remove('drunk');
             Player.isDrunk = false;
             
-            // Restore original speed
-            Game.speed = Player.originalSpeed;
-            
             if (window.GameLogger && Game.debugMode) {
-                GameLogger.debug('Drunk effect ended');
+                GameLogger.debug('Drunk effect ending - gradually restoring speed');
             }
         }, CONFIG.POWERUP.TYPES.WHISKEY.EFFECT_DURATION);
         
         if (window.GameLogger) {
-            GameLogger.info(`Applied whiskey effect (speed x${CONFIG.POWERUP.TYPES.WHISKEY.SPEED_MULTIPLIER}) for ${CONFIG.POWERUP.TYPES.WHISKEY.EFFECT_DURATION}ms`);
+            GameLogger.info(`Applied whiskey effect (speed gradually increasing to x${CONFIG.POWERUP.TYPES.WHISKEY.SPEED_MULTIPLIER}) for ${CONFIG.POWERUP.TYPES.WHISKEY.EFFECT_DURATION}ms`);
         }
     },
     

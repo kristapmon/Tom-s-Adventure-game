@@ -19,6 +19,12 @@ const Game = {
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
     isLandscape: window.innerWidth > window.innerHeight,
+    lastScreenBeforeHighScores: null,
+    targetSpeed: 0, // Target speed for gradual increases
+    speedIncreaseInProgress: false, // Flag to track if speed increase is in progress
+    speedIncreaseStartTime: 0, // Time when speed increase started
+    speedIncreaseDuration: 3000, // 3 seconds for speed increase
+    speedIncreaseStartValue: 0, // Starting speed value for increase
     
     /**
      * Initialize the game
@@ -77,6 +83,9 @@ const Game = {
         
         // Show start screen
         this.showStartScreen();
+        
+        // Setup viewport right-bound marker for object spawning
+        this.setupViewportBound();
         
         if (this.debugMode) {
             console.log('Game initialized');
@@ -345,14 +354,87 @@ const Game = {
             this.showStartScreen();
         });
         
-        // High scores button on death screen
+        // Death screen high scores button
         document.getElementById('death-high-scores').addEventListener('click', () => {
-            this.showHighScoreTable();
+            // Store current screen for later reference
+            this.lastScreenBeforeHighScores = 'death-animation';
+            
+            // Hide death animation first to avoid DOM conflicts
+            document.getElementById('death-animation').classList.add('hidden');
+            
+            // Force complete recreation of the high score table container
+            const tableContainer = document.querySelector('.high-score-table-container');
+            if (tableContainer) {
+                // Create a fresh element to replace it
+                const newTableContainer = document.createElement('div');
+                newTableContainer.className = 'high-score-table-container';
+                newTableContainer.innerHTML = `<table id="high-score-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="high-score-table-body">
+                        <tr><td colspan="4" style="text-align: center;">Loading high scores...</td></tr>
+                    </tbody>
+                </table>`;
+                
+                // Completely replace the old container with the new one
+                tableContainer.parentNode.replaceChild(newTableContainer, tableContainer);
+            }
+            
+            // Show high score table with a longer delay to ensure DOM is ready
+            setTimeout(() => {
+                this.showHighScoreTable(true, 'death-animation');
+            }, 200);
         });
         
         // Close high score table button
         document.getElementById('close-high-score-table').addEventListener('click', () => {
-            document.getElementById('high-score-table-modal').style.display = 'none';
+            const modal = document.getElementById('high-score-table-modal');
+            const tableContainer = document.querySelector('.high-score-table-container');
+            
+            // Hide the modal
+            modal.style.display = 'none';
+            
+            // Return to the correct screen based on where we came from
+            if (this.lastScreenBeforeHighScores === 'death-animation') {
+                // Show death screen again
+                document.getElementById('death-animation').classList.remove('hidden');
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('settings-screen').classList.add('hidden');
+                document.getElementById('game-over').classList.add('hidden');
+                
+                // Extra safety: ensure the game is in a paused/over state
+                this.gameOver = true;
+            } else if (this.lastScreenBeforeHighScores === 'start-screen') {
+                // Return to start screen
+                document.getElementById('start-screen').classList.remove('hidden');
+                document.getElementById('death-animation').classList.add('hidden');
+                document.getElementById('settings-screen').classList.add('hidden');
+                document.getElementById('game-over').classList.add('hidden');
+            }
+            
+            // Clean up any inline styles that might interfere with future opens
+            if (tableContainer) {
+                setTimeout(() => {
+                    // Reset some critical styles to ensure fresh state next time
+                    tableContainer.style.height = '';
+                    tableContainer.style.maxHeight = '';
+                    tableContainer.style.overflowY = '';
+                    tableContainer.scrollTop = 0;
+                }, 100);
+            }
+        });
+        
+        // Show high score table from main menu
+        document.getElementById('high-scores-btn').addEventListener('click', () => {
+            // Store current screen for later reference
+            this.lastScreenBeforeHighScores = 'start-screen';
+            this.showHighScoreTable(false, 'start-screen');
         });
         
         // Add event listener for debug toggle
@@ -518,6 +600,8 @@ const Game = {
         this.gameOver = false;
         this.score = 0;
         this.speed = CONFIG.BASE_SPEED;
+        this.targetSpeed = CONFIG.BASE_SPEED; // Initialize target speed
+        this.speedIncreaseInProgress = false;
         
         // Update score display
         document.getElementById('score').textContent = `Score: 0`;
@@ -592,6 +676,37 @@ const Game = {
     update: function() {
         if (!this.gameStarted || this.gameOver) return;
         
+        // Handle gradual speed increase if in progress
+        if (this.speedIncreaseInProgress) {
+            const currentTime = Date.now();
+            const elapsedTime = currentTime - this.speedIncreaseStartTime;
+            
+            if (elapsedTime < this.speedIncreaseDuration) {
+                // Calculate progress (0 to 1) and apply easing
+                const progress = elapsedTime / this.speedIncreaseDuration;
+                // Using easeInOut for smoother acceleration
+                const easedProgress = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                // Set current speed based on progress
+                this.speed = this.speedIncreaseStartValue + 
+                    (this.targetSpeed - this.speedIncreaseStartValue) * easedProgress;
+                
+                if (this.debugMode && elapsedTime % 500 < 20) { // Log roughly every 500ms
+                    console.log(`Gradual speed increase: ${this.speed.toFixed(2)}`);
+                }
+            } else {
+                // Ensure we reach exactly the target speed
+                this.speed = this.targetSpeed;
+                this.speedIncreaseInProgress = false;
+                
+                if (this.debugMode) {
+                    console.log(`Speed increase complete: ${this.speed}`);
+                }
+            }
+        }
+        
         // Update player
         Player.update();
         
@@ -654,12 +769,21 @@ const Game = {
         JokesManager.updateBubblePosition();
         
         // Increase speed based on score
-        if (this.score > 0 && this.score % CONFIG.SPEED_INCREMENT_SCORE === 0) {
-            this.speed += CONFIG.SPEED_INCREMENT;
+        if (this.score > 0 && this.score % CONFIG.SPEED_INCREMENT_SCORE === 0 && !this.speedIncreaseInProgress) {
+            // Calculate new target speed
+            this.targetSpeed = this.speed + CONFIG.SPEED_INCREMENT;
+            
+            // Start gradual speed increase
+            this.speedIncreaseInProgress = true;
+            this.speedIncreaseStartTime = Date.now();
+            this.speedIncreaseStartValue = this.speed;
             
             if (this.debugMode) {
-                console.log(`Speed increased to ${this.speed}`);
+                console.log(`Starting gradual speed increase to ${this.targetSpeed}`);
             }
+            
+            // Show a speed up message
+            this.showMessage('Speed increasing!', 1000);
         }
         
         // Apply drunk effect if active
@@ -709,13 +833,7 @@ const Game = {
                     }
                 }
                 
-                // Increase speed every 500 points
-                if (this.score % CONFIG.SPEED_INCREMENT_SCORE === 0) {
-                    this.speed += CONFIG.SPEED_INCREMENT;
-                    if (this.debugMode) {
-                        console.log("Speed increased to:", this.speed);
-                    }
-                }
+                // Note: Speed increase now handled in the update function for gradual change
             }
         }, 100);
     },
@@ -753,6 +871,23 @@ const Game = {
         // Update high score display
         document.getElementById('high-score').textContent = `High Score: ${this.highScore}`;
         
+        // Disable all restart and menu buttons temporarily
+        const gameButtons = [
+            document.getElementById('restart-btn'),
+            document.getElementById('menu-btn'),
+            document.getElementById('death-restart'),
+            document.getElementById('death-menu'),
+            document.getElementById('death-high-scores')
+        ];
+        
+        gameButtons.forEach(button => {
+            if (button) {
+                button.disabled = true;
+                button.style.opacity = '0.5';
+                button.style.cursor = 'not-allowed';
+            }
+        });
+        
         // Show death animation
         this.showDeathAnimation(isNewHighScore);
         
@@ -764,10 +899,40 @@ const Game = {
         // Check if score qualifies for high score table
         if (typeof HighScores !== 'undefined') {
             HighScores.checkHighScore(this.score, (qualifies) => {
+                // Re-enable buttons only after high score check is complete
+                setTimeout(() => {
+                    gameButtons.forEach(button => {
+                        if (button) {
+                            button.disabled = false;
+                            button.style.opacity = '1';
+                            button.style.cursor = 'pointer';
+                        }
+                    });
+                    
+                    if (this.debugMode && window.GameLogger) {
+                        GameLogger.debug('Buttons re-enabled after high score check');
+                    }
+                }, 500);
+                
                 if (qualifies) {
                     this.showHighScorePrompt();
                 }
             });
+        } else {
+            // If HighScores isn't available, still re-enable buttons after a delay
+            setTimeout(() => {
+                gameButtons.forEach(button => {
+                    if (button) {
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                        button.style.cursor = 'pointer';
+                    }
+                });
+                
+                if (this.debugMode && window.GameLogger) {
+                    GameLogger.debug('Buttons re-enabled after delay');
+                }
+            }, 500);
         }
     },
     
@@ -1172,6 +1337,9 @@ const Game = {
         const nameInput = document.getElementById('player-name');
         const submitButton = document.getElementById('submit-score');
         
+        // Store the fact that we came from death screen
+        this.lastScreenBeforeHighScores = 'death-animation';
+        
         // Set the score
         scoreSpan.textContent = this.score;
         
@@ -1237,8 +1405,12 @@ const Game = {
                         // Hide the modal
                         modal.style.display = 'none';
                         
-                        // Show the high score table
-                        this.showHighScoreTable();
+                        // Small delay before showing high score table
+                        // This helps ensure DOM is properly reset between modal transitions
+                        setTimeout(() => {
+                            // Show the high score table
+                            this.showHighScoreTable(true, 'death-animation');
+                        }, 100);
                     } else {
                         // Re-enable the button if there was an error
                         submitButton.disabled = false;
@@ -1256,16 +1428,33 @@ const Game = {
     },
     
     // Add method to show high score table
-    showHighScoreTable: function() {
+    showHighScoreTable: function(fromDeathScreen, sourceScreen) {
+        this.lastScreenBeforeHighScores = sourceScreen || 'start-screen';
+        
         const modal = document.getElementById('high-score-table-modal');
         const tableBody = document.getElementById('high-score-table-body');
         const closeButton = document.getElementById('close-high-score-table');
+        const tableContainer = document.querySelector('.high-score-table-container');
         
         // Clear existing rows
-        tableBody.innerHTML = '';
-        
-        // Show loading indicator
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading high scores...</td></tr>';
+        
+        // Apply extra strong styling for the table container, especially for mobile
+        if (tableContainer) {
+            // Force direct inline styles with !important priority
+            tableContainer.setAttribute('style', `
+                max-height: ${this.isMobileDevice ? '40vh' : '50vh'} !important;
+                overflow-y: ${this.isMobileDevice ? 'scroll' : 'auto'} !important;
+                overflow-x: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                transform: translateZ(0) !important;
+                will-change: transform, scroll-position !important;
+                display: block !important;
+                width: 100% !important;
+                border: 2px solid #4CAF50 !important;
+                ${fromDeathScreen ? 'height: 40vh !important;' : ''}
+            `);
+        }
         
         // Show the modal
         modal.style.display = 'flex';
@@ -1304,15 +1493,42 @@ const Game = {
                 if (scores.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No high scores yet!</td></tr>';
                 }
+                
+                // After loading, ensure scrolling is working
+                if (tableContainer) {
+                    // Force browser to recalculate layout
+                    void tableContainer.offsetHeight;
+                    
+                    // Try to scroll up and down slightly to "wake up" the scrolling
+                    setTimeout(() => {
+                        tableContainer.scrollTop = 1;
+                        setTimeout(() => {
+                            tableContainer.scrollTop = 0;
+                        }, 50);
+                    }, 200);
+                }
             })
             .catch(error => {
                 tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Error loading high scores. Please try again later.</td></tr>';
                 console.error("Error showing high score table:", error);
             });
         
-        // Handle close button click
+        // Set handler for close button
         closeButton.onclick = () => {
+            // Hide the modal
             modal.style.display = 'none';
+            
+            // Show appropriate screen based on where we came from
+            if (this.lastScreenBeforeHighScores === 'death-animation') {
+                document.getElementById('death-animation').classList.remove('hidden');
+            }
+            
+            // Clean up styles
+            if (tableContainer) {
+                setTimeout(() => {
+                    tableContainer.scrollTop = 0;
+                }, 100);
+            }
         };
     },
     
@@ -1453,6 +1669,54 @@ const Game = {
                 this.handleResize();
             }, 200); // Small delay to ensure dimensions are updated
         });
+    },
+    
+    /**
+     * Get adjusted window width for spawning
+     * @returns {number} Adjusted window width for spawning entities
+     */
+    getSpawnPosition: function() {
+        // Check if on mobile
+        const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+        
+        // On mobile with our 143vw trick, we need to offset the spawn position
+        if (isMobile) {
+            // We're using 143vw width, so we need to adjust the spawn position
+            // Add 43% extra to the window width to account for the scaled container
+            return window.innerWidth * 1.43;
+        }
+        
+        // On desktop, use the normal window width
+        return window.innerWidth;
+    },
+    
+    /**
+     * Setup viewport bound element to help with spawning objects
+     */
+    setupViewportBound: function() {
+        // Create or get the viewport bound element
+        let viewportBound = document.getElementById('viewport-right-bound');
+        
+        if (!viewportBound) {
+            viewportBound = document.createElement('div');
+            viewportBound.id = 'viewport-right-bound';
+            viewportBound.style.position = 'absolute';
+            viewportBound.style.right = '0';
+            viewportBound.style.top = '0';
+            viewportBound.style.width = '1px';
+            viewportBound.style.height = '1px';
+            viewportBound.style.pointerEvents = 'none';
+            viewportBound.style.visibility = 'hidden';
+            document.getElementById('game-container').appendChild(viewportBound);
+        }
+        
+        // Position for mobile devices
+        const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+        if (isMobile) {
+            viewportBound.style.right = 'calc(-43vw)';
+        } else {
+            viewportBound.style.right = '0';
+        }
     }
 };
 

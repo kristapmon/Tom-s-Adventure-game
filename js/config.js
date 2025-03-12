@@ -19,25 +19,25 @@ const CONFIG = {
     // Difficulty settings
     DIFFICULTY: {
         easy: {
-            TROLL_SPAWN_RATE: 0.005,
+            TROLL_SPAWN_RATE: 0.010,
             SPEED_MULTIPLIER: 0.8,
             GRAVITY_MULTIPLIER: 0.9,
             JUMP_POWER_MULTIPLIER: 1.2,
-            POWERUP_SPAWN_RATE: 0.004
+            POWERUP_SPAWN_RATE: 0.008
         },
         medium: {
-            TROLL_SPAWN_RATE: 0.008,
+            TROLL_SPAWN_RATE: 0.030,
             SPEED_MULTIPLIER: 1.0,
             GRAVITY_MULTIPLIER: 1.0,
             JUMP_POWER_MULTIPLIER: 1.0,
-            POWERUP_SPAWN_RATE: 0.003
+            POWERUP_SPAWN_RATE: 0.01
         },
         hard: {
-            TROLL_SPAWN_RATE: 0.012,
+            TROLL_SPAWN_RATE: 0.020,
             SPEED_MULTIPLIER: 1.2,
             GRAVITY_MULTIPLIER: 1.1,
             JUMP_POWER_MULTIPLIER: 0.9,
-            POWERUP_SPAWN_RATE: 0.002
+            POWERUP_SPAWN_RATE: 0.004
         }
     },
     
@@ -63,7 +63,7 @@ const CONFIG = {
         MIN_BOTTOM: 50,  // Minimum height from ground
         MAX_BOTTOM: 150, // Maximum height from ground
         LIFESPAN: 8000,  // How long power-ups stay on screen if not collected (ms)
-        MIN_DISTANCE: 500, // Minimum distance between power-ups
+        MIN_DISTANCE: 400,
         TYPES: {
             CLOVER: {
                 NAME: 'clover',
