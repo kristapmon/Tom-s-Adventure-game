@@ -30,7 +30,7 @@ const HighScores = {
     submitScore: function(name, score) {
         if (!this.initialized) this.init();
         
-        // Sanitize the name (allow letters, numbers, spaces, but no special characters)
+        // Sanitize the name (allow letters, numbers, spaces, but remove any special characters)
         const sanitizedName = name.substring(0, 15).replace(/[^\w\s]/gi, '');
         
         const scoreData = {

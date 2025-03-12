@@ -92,12 +92,30 @@ const Game = {
     checkOrientation: function() {
         this.isLandscape = window.innerWidth > window.innerHeight;
         const landscapeMessage = document.getElementById('landscape-message');
+        const gameContainer = document.getElementById('game-container');
         
-        if (landscapeMessage) {
+        if (landscapeMessage && gameContainer) {
             if (this.isMobileDevice && !this.isLandscape) {
-                landscapeMessage.style.display = 'block';
+                // Show landscape message and hide/pause game in portrait mode
+                landscapeMessage.style.display = 'flex';
+                
+                // If the game is running, pause it
+                if (this.gameStarted && !this.gameOver) {
+                    this.pauseGame();
+                }
+                
+                if (window.GameLogger && this.debugMode) {
+                    GameLogger.debug('Portrait mode detected: prompting to rotate device');
+                }
             } else {
+                // Hide landscape message and show game in landscape mode
                 landscapeMessage.style.display = 'none';
+                gameContainer.style.visibility = 'visible';
+                
+                // If we were previously in portrait mode and game was paused, resume it
+                if (this.gameStarted && !this.gameOver && document.hidden === false) {
+                    this.resumeGame();
+                }
             }
         }
         
@@ -287,6 +305,11 @@ const Game = {
             this.startGame();
         });
         
+        // High scores button on start screen
+        document.getElementById('high-scores-btn').addEventListener('click', () => {
+            this.showHighScoreTable();
+        });
+        
         // Settings button
         document.getElementById('settings-btn').addEventListener('click', () => {
             document.getElementById('start-screen').classList.add('hidden');
@@ -320,6 +343,16 @@ const Game = {
         document.getElementById('death-menu').addEventListener('click', () => {
             document.getElementById('death-animation').classList.add('hidden');
             this.showStartScreen();
+        });
+        
+        // High scores button on death screen
+        document.getElementById('death-high-scores').addEventListener('click', () => {
+            this.showHighScoreTable();
+        });
+        
+        // Close high score table button
+        document.getElementById('close-high-score-table').addEventListener('click', () => {
+            document.getElementById('high-score-table-modal').style.display = 'none';
         });
         
         // Add event listener for debug toggle
@@ -1142,11 +1175,52 @@ const Game = {
         // Set the score
         scoreSpan.textContent = this.score;
         
+        // Reset the name input and button state
+        nameInput.value = '';
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit';
+        
         // Show the modal
         modal.style.display = 'flex';
         
         // Focus the input
         nameInput.focus();
+        
+        // Remove any existing event listeners to prevent duplicates
+        nameInput.onkeypress = null;
+        nameInput.onkeydown = null;
+        nameInput.oninput = null;
+        
+        // Handle space key separately to ensure it works with a single press
+        nameInput.addEventListener('keydown', function(event) {
+            // Special handling for space key
+            if (event.key === ' ' || event.keyCode === 32) {
+                event.stopPropagation(); // Stop space from triggering other events
+                
+                // Don't add extra handling beyond this as the browser will handle the input
+            }
+            
+            // Handle Enter key for submission
+            if (event.key === 'Enter') {
+                submitButton.click();
+            }
+        });
+        
+        // Filter input to only allow alphanumeric characters and spaces in real-time
+        nameInput.addEventListener('input', function() {
+            // Preserve cursor position
+            const cursorPos = this.selectionStart;
+            
+            // Replace any non-alphanumeric characters and spaces with empty string
+            const filteredValue = this.value.replace(/[^\w\s]/gi, '');
+            
+            // Only update if the value actually changed (to avoid unnecessary updates)
+            if (this.value !== filteredValue) {
+                this.value = filteredValue;
+                // Restore cursor position (adjusted if characters were removed)
+                this.setSelectionRange(cursorPos, cursorPos);
+            }
+        });
         
         // Handle submit button click
         submitButton.onclick = () => {
@@ -1178,13 +1252,6 @@ const Game = {
                     submitButton.textContent = 'Submit';
                     alert('There was an error submitting your score. Please try again.');
                 });
-        };
-        
-        // Handle Enter key
-        nameInput.onkeydown = (e) => {
-            if (e.key === 'Enter') {
-                submitButton.click();
-            }
         };
     },
     
