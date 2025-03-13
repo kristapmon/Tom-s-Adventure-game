@@ -205,7 +205,60 @@ const GameStats = {
         averageScore.textContent = "Loading...";
         
         // Show the modal
-        document.getElementById('stats-modal').style.display = 'block';
+        const modal = document.getElementById('stats-modal');
+        modal.style.display = 'flex'; // Use flex for better centering
+        
+        // Apply mobile-specific adjustments if Game object is available
+        if (typeof Game !== 'undefined' && Game.isMobileDevice) {
+            const statsContainer = document.querySelector('.stats-container');
+            if (statsContainer) {
+                // Reset any previous styles first
+                statsContainer.removeAttribute('style');
+                
+                // Apply enhanced mobile styles
+                statsContainer.setAttribute('style', `
+                    max-height: calc(var(--vh, 1vh) * 45) !important;
+                    padding-bottom: var(--url-bar-offset, 0px) !important;
+                    overflow-y: scroll !important;
+                    -webkit-overflow-scrolling: touch !important;
+                    transform: translateZ(0) !important;
+                    will-change: transform, scroll-position !important;
+                    touch-action: pan-y !important;
+                `);
+                
+                // Add enhanced touch handling for smooth scrolling
+                if (this._touchScrollHandler) {
+                    statsContainer.removeEventListener('touchstart', this._touchScrollHandler);
+                    statsContainer.removeEventListener('touchmove', this._touchScrollHandler);
+                    statsContainer.removeEventListener('touchend', this._touchScrollHandler);
+                }
+                
+                this._touchScrollHandler = function(e) {
+                    e.stopPropagation(); // Prevent parent elements from capturing events
+                };
+                
+                // Apply touch events with passive option for smooth scrolling
+                statsContainer.addEventListener('touchstart', this._touchScrollHandler, { passive: true });
+                statsContainer.addEventListener('touchmove', this._touchScrollHandler, { passive: true });
+                statsContainer.addEventListener('touchend', this._touchScrollHandler, { passive: true });
+                
+                // Small delay to ensure container is ready for scrolling
+                setTimeout(() => {
+                    // Force layout recalculation
+                    void statsContainer.offsetHeight;
+                    
+                    // Small scroll to "wake up" the scrolling
+                    statsContainer.scrollTop = 1;
+                    setTimeout(() => statsContainer.scrollTop = 0, 50);
+                }, 200);
+            }
+            
+            // Adjust modal position to account for URL bar on mobile
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.marginBottom = 'var(--url-bar-offset, 0px)';
+            }
+        }
         
         // Fetch global stats if Firebase is available
         if (this.initialized && this.db) {
@@ -229,16 +282,35 @@ const GameStats = {
                         GameLogger.error('Error fetching game stats', error);
                     }
                     
-                    // Show error message
+                    // Handle error in UI
                     globalGamesCount.textContent = "Error";
                     uniquePlayers.textContent = "Error";
                     averageScore.textContent = "Error";
                 });
         } else {
-            // Firebase not available, show local only
+            // Set fallback values if Firebase isn't available
             globalGamesCount.textContent = "N/A";
             uniquePlayers.textContent = "N/A";
             averageScore.textContent = "N/A";
+        }
+        
+        // Set up close handler if not already done
+        const closeButton = document.getElementById('close-stats-modal');
+        if (closeButton) {
+            closeButton.onclick = () => {
+                modal.style.display = 'none';
+                
+                // Clean up event listeners
+                if (Game && Game.isMobileDevice) {
+                    const statsContainer = document.querySelector('.stats-container');
+                    if (statsContainer && this._touchScrollHandler) {
+                        statsContainer.removeEventListener('touchstart', this._touchScrollHandler);
+                        statsContainer.removeEventListener('touchmove', this._touchScrollHandler);
+                        statsContainer.removeEventListener('touchend', this._touchScrollHandler);
+                        this._touchScrollHandler = null;
+                    }
+                }
+            };
         }
     }
 };

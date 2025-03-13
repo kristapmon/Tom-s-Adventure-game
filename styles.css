@@ -1064,6 +1064,13 @@ select, input[type="checkbox"] {
     display: block;
 }
 
+/* Mobile viewport height variables 
+   These will be set by JavaScript for better mobile handling */
+:root {
+    --vh: 1vh;
+    --url-bar-offset: 0px;
+}
+
 /* Mobile controls */
 #mobile-controls {
     position: absolute;
@@ -1103,7 +1110,7 @@ select, input[type="checkbox"] {
     #game-container {
         position: fixed !important;
         width: 143vw !important; /* Increased from 100vw to compensate for 0.7 scale (100/0.7) */
-        height: 140vh !important;
+        height: calc(140 * var(--vh)) !important; /* Using CSS variable for actual viewport height */
         max-width: 143vw !important; /* Match the width */
         min-width: 143vw !important; /* Match the width */
         left: 50% !important; /* Center properly */
@@ -1111,6 +1118,7 @@ select, input[type="checkbox"] {
         top: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
+        padding-bottom: var(--url-bar-offset) !important; /* Add padding to account for URL bar */
         overflow: hidden !important;
         transform: scale(0.7) translateX(-50%) !important; /* Add translateX for proper centering */
         transform-origin: left top !important; /* Change to left top with the translateX */
@@ -1120,7 +1128,7 @@ select, input[type="checkbox"] {
     /* Override any conflicting styles */
     html, body {
         width: 100% !important;
-        height: 100% !important;
+        height: calc(100 * var(--vh)) !important; /* Using CSS variable for viewport height */
         max-width: 100% !important;
         overflow: hidden !important;
         margin: 0 !important;
@@ -1170,7 +1178,7 @@ select, input[type="checkbox"] {
     
     /* Adjust modals for mobile view */
     .modal-content {
-        max-height: 70vh;
+        max-height: calc(70 * var(--vh)); /* Using CSS variable for viewport height */
         overflow-y: auto;
         width: 85%;
         padding: 15px;
@@ -1178,7 +1186,7 @@ select, input[type="checkbox"] {
     
     /* Ensure high score table is properly scaled and scrollable */
     .high-score-table-modal-content {
-        max-height: 70vh;
+        max-height: calc(70 * var(--vh)); /* Using CSS variable for viewport height */
         width: 90%;
         padding: 10px;
     }
@@ -1193,7 +1201,7 @@ select, input[type="checkbox"] {
     
     /* Ensure the high score table container has proper dimensions */
     .high-score-table-container {
-        max-height: 40vh !important;
+        max-height: calc(40 * var(--vh)) !important; /* Using CSS variable for viewport height */
         height: auto !important;
         overflow-y: scroll !important;
         -webkit-overflow-scrolling: touch !important;
@@ -1343,18 +1351,21 @@ select, input[type="checkbox"] {
     }
 }
 
-/* High Score Modal Styles */
+/* Modal base styles */
 .modal {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw; /* Use viewport width */
-    height: 100vh; /* Use viewport height */
+    width: 100%;
+    height: 100%;
+    /* Use CSS variable for viewport height on mobile */
+    height: calc(var(--vh, 1vh) * 100);
     background-color: rgba(0, 0, 0, 0.7);
     z-index: 1000;
     justify-content: center;
     align-items: center;
+    padding-bottom: var(--url-bar-offset, 0px); /* Account for URL bar on mobile */
 }
 
 .modal-content {
@@ -1363,46 +1374,37 @@ select, input[type="checkbox"] {
     border-radius: 10px;
     max-width: 500px;
     width: 90%;
-    max-height: 80vh;
+    /* Use CSS variable for viewport height */
+    max-height: calc(var(--vh, 1vh) * 80);
     overflow-y: auto;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     color: #000;
     text-align: center;
     font-family: 'Press Start 2P', cursive;
+    /* For mobile devices to handle momentum scrolling properly */
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Larger high score table modal */
 .high-score-table-modal-content {
     max-width: 800px;
     width: 90%;
-    max-height: 90vh;
+    max-height: calc(var(--vh, 1vh) * 80);
 }
 
-.input-group {
-    margin: 20px 0;
-    text-align: left;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 10px;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.input-group input {
-    width: 100%;
+/* Stats container styles to fit mobile screens better */
+.stats-container {
+    max-height: calc(var(--vh, 1vh) * 50);
+    overflow-y: auto;
+    margin: 15px 0;
     padding: 10px;
-    border: 2px solid #4CAF50;
+    background-color: rgba(0, 0, 0, 0.1);
     border-radius: 5px;
-    font-size: 16px;
-    background-color: #fff;
-    color: #000;
-    font-family: 'Press Start 2P', cursive;
+    -webkit-overflow-scrolling: touch;
 }
 
 .high-score-table-container {
-    max-height: 60vh;
+    max-height: calc(var(--vh, 1vh) * 50);
     overflow-y: auto;
     margin: 20px 0;
     border: 2px solid #4CAF50;
@@ -1416,45 +1418,23 @@ select, input[type="checkbox"] {
     will-change: transform, scroll-position;
 }
 
-#high-score-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 0;
-}
-
-#high-score-table th, 
-#high-score-table td {
-    padding: 12px 8px;
-    text-align: left;
-    border-bottom: 1px solid #4CAF50;
-}
-
-#high-score-table th {
-    background-color: #4CAF50;
-    color: white;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-#high-score-table tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-#high-score-table tr:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Mobile-specific styles for high score table */
+/* Mobile-specific adjustments */
 @media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+        margin-bottom: var(--url-bar-offset, 0px); /* Account for URL bar */
+        max-height: calc(var(--vh, 1vh) * 70); /* Reduced height for mobile */
+    }
+    
     .high-score-table-modal-content {
         width: 95%;
         padding: 15px;
-        max-height: 80vh;
+        max-height: calc(var(--vh, 1vh) * 70);
     }
     
     .high-score-table-container {
-        max-height: 50vh;
+        max-height: calc(var(--vh, 1vh) * 45); /* Reduced for mobile */
         transform: translateZ(0) !important;
         touch-action: pan-y !important;
         overflow-y: scroll !important;
@@ -1467,23 +1447,30 @@ select, input[type="checkbox"] {
         border: 2px solid rgba(76, 175, 80, 0.6) !important;
     }
     
+    .stats-container {
+        max-height: calc(var(--vh, 1vh) * 45); /* Reduced for mobile */
+    }
+    
     #high-score-table th, 
     #high-score-table td {
-        padding: 10px 5px;
+        padding: 8px 4px;
+        font-size: 11px; /* Smaller text on mobile */
+    }
+    
+    .modal h2 {
+        font-size: 16px; /* Smaller headings on mobile */
+        margin-bottom: 12px;
+    }
+    
+    .stat-item {
+        flex-direction: column; /* Stack on mobile */
+        padding: 8px;
+        margin: 8px 0;
+    }
+    
+    .stat-label {
+        margin-bottom: 5px;
         font-size: 12px;
-    }
-    
-    .high-score-table-container::-webkit-scrollbar {
-        width: 8px;
-    }
-    
-    .high-score-table-container::-webkit-scrollbar-thumb {
-        background-color: rgba(76, 175, 80, 0.6);
-        border-radius: 4px;
-    }
-    
-    .high-score-table-container::-webkit-scrollbar-track {
-        background-color: rgba(0, 0, 0, 0.1);
     }
 }
 
@@ -1646,4 +1633,72 @@ select, input[type="checkbox"] {
     border-radius: 3px;
     min-width: 50px;
     text-align: center;
+}
+
+/* Add back input group styles */
+.input-group {
+    margin: 20px 0;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #4CAF50;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: #fff;
+    color: #000;
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Add back high score table styles */
+#high-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+#high-score-table th, 
+#high-score-table td {
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 1px solid #4CAF50;
+}
+
+#high-score-table th {
+    background-color: #4CAF50;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#high-score-table tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#high-score-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Add scrollbar styling */
+.high-score-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.high-score-table-container::-webkit-scrollbar-thumb {
+    background-color: rgba(76, 175, 80, 0.6);
+    border-radius: 4px;
+}
+
+.high-score-table-container::-webkit-scrollbar-track {
+    background-color: rgba(0, 0, 0, 0.1);
 } 

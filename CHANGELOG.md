@@ -34,6 +34,9 @@ This file documents all notable changes to Tom's Adventure game.
 - Sound resource page with links to free sound effects for the game
 - Improved audio initialization to ensure sounds play on first interaction
 - Multiple audio initialization points to guarantee sound playback across browsers
+- Mobile-specific adjustments for high score and stats modals
+- Improved mobile viewport handling for all game elements
+- Better handling of virtual keyboard behavior on mobile devices
 
 ### Changed
 - Increased speed increment amount from 0.5 to 0.8 for more challenging gameplay
@@ -67,20 +70,36 @@ This file documents all notable changes to Tom's Adventure game.
 - Fixed audio not playing on game start by adding multiple initialization points
 - Fixed browser autoplay policy issues with sound by initializing audio on user interaction
 - Fixed missing sound effects for land and powerup actions
+- Fixed mobile jump glitch where Tom would land lower and then jump back to running position when tapping
+- Fixed high score table display on mobile browsers to account for URL bar area
+- Fixed stats popup display on mobile devices to ensure proper sizing and positioning
+- Fixed form input handling in high score submission for mobile devices
+- Improved mobile modal positioning to avoid being pushed off screen by virtual keyboards
+- Enhanced mobile touchscreen interactions with better tap response
+- Fixed unit inconsistency between jumping and landing in mobile view
+- Ensured consistent positioning of all UI elements across mobile and desktop views
 
-## [1.6.1] - 2023-11-14
+## [1.6.1] - 2023-09-15
 
 ### Added
-- High score buttons on main menu and death screen
-- Improved high score table with larger size and better scrolling
-- Local storage fallback for high scores when Firebase is unavailable
+- Functional sound effects for all game actions (jumping, dying, collecting points)
+- Game statistics tracking for both local and global play
+- STATS button in Settings to view game statistics
+- Display of total games played, unique players count, and average score
+- Firebase integration for global statistics tracking
+- Gradual speed transition system with custom easing function for smoother gameplay
+- Visual notifications for speed increases with new pulsing animation
+- Enhanced whiskey power-up with smoother transitions
+- Themed comments replacing dad jokes
+- Increased spawn rates for power-ups and adjusted spacing for optimal gameplay
 
-### Changed
-- Removed timestamp from high score display, keeping only the date
-- Allowed spaces in player names while maintaining security
-- Changed "Submit Score" button text to just "Submit"
-- Improved styling of high score table and modals
-- Made high score table larger and more readable
+### Fixed
+- Fixed mobile viewport issues with URL bar causing content to be cut off
+- Fixed incorrect positioning of player character on mobile devices
+- Resolved issue where Tom would "land lower and then jump up" when tapping on mobile devices
+- Ensured consistent positioning of game elements and UI across different mobile browsers
+- Improved popup and notification positioning to match game elements on mobile
+- Enhanced player movement handling to prevent inconsistencies between touch and keyboard controls
 
 ## [1.6.0] - 2023-11-13
 
@@ -336,6 +355,21 @@ This file documents all notable changes to Tom's Adventure game.
 - Score tracking and high score persistence
 - Game over screen
 - Basic responsive design
+
+## [1.7.0] - 2023-07-18
+
+### Fixed
+- Fixed issues with mobile touch events and jumping mechanics
+- Fixed high score table scrolling on mobile devices 
+- Improved mobile scrolling for statistics modal
+- Fixed high score loading issues with Firebase integration
+- Enhanced player jump mechanics for smoother experience on mobile
+- Added better handling of viewport and URL bar for mobile browsers
+- Improved touch handling for game elements on mobile devices
+
+### Added
+- Enhanced mobile touch support for high score tables and statistics modals
+- Improved debugging capabilities for high score system
 
 ## How to Update Version
 

@@ -120,11 +120,23 @@ const Player = {
      */
     executeJump: function() {
         if (!this.jumping && !Game.gameOver && Game.gameStarted) {
+            // Ensure the player is at the proper starting position
+            if (typeof Game !== 'undefined' && Game.isMobileDevice) {
+                // Force a consistent starting position in pixels
+                this.element.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
+            }
+            
             this.jumping = true;
             
             // Apply difficulty settings
             const difficultySettings = getCurrentDifficultySettings();
             this.jumpHeight = CONFIG.JUMP_POWER * difficultySettings.JUMP_POWER_MULTIPLIER;
+            
+            // For mobile, we may want a slightly higher initial jump velocity for better feel
+            if (typeof Game !== 'undefined' && Game.isMobileDevice) {
+                // Give a slight boost to make mobile jumps feel more responsive
+                this.jumpHeight *= 1.05;
+            }
             
             this.floatTime = 0;
             
@@ -178,6 +190,13 @@ const Player = {
                 if (typeof AudioManager !== 'undefined') {
                     AudioManager.play('land');
                 }
+                
+                // On mobile, we need to be very careful about not triggering multiple updates with different units
+                if (typeof Game !== 'undefined' && Game.isMobileDevice) {
+                    // Set back to the exact same value in px units - NO unit conversion here
+                    this.element.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
+                    return; // Exit early to prevent further updates that might cause glitches
+                }
             }
             
             // Check if player is at max height
@@ -186,11 +205,18 @@ const Player = {
                 this.jumpHeight = 0; // Start falling
             }
             
-            // Update position
+            // Update position - always use px for jumping for consistent physics
             this.element.style.bottom = `${newBottom}px`;
         } else {
-            // Ensure player is at the correct ground height when not jumping
-            this.element.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
+            // Not jumping, so we can use appropriate units for desktop/mobile
+            if (typeof Game !== 'undefined' && Game.isMobileDevice) {
+                // For mobile devices, do NOT set the bottom style directly 
+                // Otherwise we get the "landing lower then jumping up" issue
+                // Let applyDynamicAdjustments handle this instead
+            } else {
+                // On desktop, we can safely set the bottom directly in px
+                this.element.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
+            }
         }
         
         // Handle floating (holding jump button)
@@ -223,7 +249,14 @@ const Player = {
      */
     ensureCorrectHeight: function() {
         if (!this.jumping && this.element) {
-            this.element.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
+            if (typeof Game !== 'undefined' && Game.isMobileDevice) {
+                // On mobile devices, allow Game.applyDynamicAdjustments to handle this
+                // to maintain consistent viewport height (vh) units
+                // This method will be called through Game.updateScreenDimensions()
+            } else {
+                // On desktop, use pixel values directly
+                this.element.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
+            }
         }
     },
     

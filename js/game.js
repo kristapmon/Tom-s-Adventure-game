@@ -168,8 +168,8 @@ const Game = {
             const groundHeightVh = (groundHeight / this.screenHeight) * 100;
             ground.style.height = `${groundHeightVh}vh`;
             
-            // Adjust player position
-            if (Player.element) {
+            // Adjust player position - ONLY IF NOT JUMPING
+            if (Player.element && !Player.jumping) {
                 Player.element.style.bottom = `${groundHeightVh}vh`;
             }
             
@@ -191,12 +191,25 @@ const Game = {
             trees.forEach(tree => {
                 tree.style.bottom = `${groundHeightVh}vh`;
             });
+            
+            // Adjust popup positions (messages, power-up notifications, etc.)
+            const popups = document.querySelectorAll('.message, .power-up-notification, .comment-bubble');
+            popups.forEach(popup => {
+                // Only adjust popups that are positioned relative to the bottom
+                if (popup.style.bottom && popup.style.bottom !== '') {
+                    const currentBottom = parseFloat(popup.style.bottom);
+                    if (!isNaN(currentBottom)) {
+                        // Convert to vh units for consistency
+                        popup.style.bottom = `${(currentBottom / this.screenHeight) * 100}vh`;
+                    }
+                }
+            });
         } else {
             // Use pixels on desktop for precise positioning
             ground.style.height = `${groundHeight}px`;
             
-            // Adjust player position
-            if (Player.element) {
+            // Adjust player position - ONLY IF NOT JUMPING
+            if (Player.element && !Player.jumping) {
                 Player.element.style.bottom = `${groundHeight}px`;
             }
             
@@ -232,11 +245,15 @@ const Game = {
                 scale = 1.1;
             }
             
-            Player.element.style.transform = `scale(${scale}) translateZ(10px)`;
+            // Don't apply transform if player is drunk (it's handled separately)
+            if (!Player.isDrunk) {
+                Player.element.style.transform = `scale(${scale}) translateZ(10px)`;
+            }
         }
         
         // Ensure player is at the correct height after adjustments
-        if (Player && typeof Player.ensureCorrectHeight === 'function') {
+        if (Player && typeof Player.ensureCorrectHeight === 'function' && !this.isMobileDevice) {
+            // Only call ensureCorrectHeight for desktop, as we're handling mobile differently
             Player.ensureCorrectHeight();
         }
     },
@@ -284,29 +301,72 @@ const Game = {
             }
         });
         
-        // Mobile touch event listeners
+        // Mobile touch event listeners - improved for better responsiveness
         const jumpArea = document.getElementById('jump-area');
         if (jumpArea) {
+            // Keep track of touch events
+            let touchStartY = 0;
+            let touchIdentifier = null;
+            
             // Touch start - jump and start floating
             jumpArea.addEventListener('touchstart', (event) => {
-                event.preventDefault();
                 if (this.gameStarted && !this.gameOver) {
-                    Player.jump();
-                    Player.startFloat();
+                    event.preventDefault();
+                    
+                    // Store the touch position and identifier for tracking
+                    if (event.touches.length > 0) {
+                        const touch = event.touches[0];
+                        touchStartY = touch.clientY;
+                        touchIdentifier = touch.identifier;
+                    }
+                    
+                    // Make sure player is at the correct position before jumping
+                    // This ensures we start from a consistent state
+                    if (Player.element && !Player.jumping) {
+                        // Use pixel units for consistency during jumps
+                        Player.element.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
+                    }
+                    
+                    // Initiate jump with a very slight delay to ensure proper animation
+                    setTimeout(() => {
+                        Player.jump();
+                        Player.startFloat();
+                    }, 5);
                 }
-            });
+            }, { passive: false });
             
             // Touch end - stop floating
             jumpArea.addEventListener('touchend', (event) => {
                 event.preventDefault();
-                Player.stopFloat();
-            });
+                
+                // Verify it's the same touch that started the jump
+                let matchFound = false;
+                
+                // Check if our tracked touch has ended
+                if (event.changedTouches) {
+                    for (let i = 0; i < event.changedTouches.length; i++) {
+                        if (event.changedTouches[i].identifier === touchIdentifier) {
+                            matchFound = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Only stop floating if this is the touch that started it
+                if (matchFound) {
+                    Player.stopFloat();
+                    touchIdentifier = null;
+                }
+            }, { passive: false });
             
             // Touch cancel - stop floating
             jumpArea.addEventListener('touchcancel', (event) => {
                 event.preventDefault();
+                
+                // Just to be safe, always stop floating on touch cancel
                 Player.stopFloat();
-            });
+                touchIdentifier = null;
+            }, { passive: false });
         }
         
         // Start button
@@ -472,6 +532,27 @@ const Game = {
             }, 200); // Small delay to ensure dimensions are updated
         });
         
+        // Additional event listeners for mobile browsers to handle URL bar visibility changes
+        if (this.isMobileDevice) {
+            // These events can indicate a change in the URL bar visibility
+            window.addEventListener('scroll', () => {
+                this.handleResize();
+            }, { passive: true });
+            
+            // Trigger on touch start/end to catch URL bar changes
+            window.addEventListener('touchstart', () => {
+                setTimeout(() => this.handleResize(), 300);
+            }, { passive: true });
+            
+            window.addEventListener('touchend', () => {
+                setTimeout(() => this.handleResize(), 300);
+            }, { passive: true });
+            
+            // Also update on page load and after a short delay
+            setTimeout(() => this.handleResize(), 500);
+            setTimeout(() => this.handleResize(), 1500);
+        }
+        
         // Handle visibility change (pause game when tab is not visible)
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && this.gameStarted && !this.gameOver) {
@@ -493,6 +574,22 @@ const Game = {
      * Handle window resize
      */
     handleResize: function() {
+        // For mobile browsers, set a CSS variable for the actual viewport height
+        // This helps avoid issues with URL bars that change the viewport size
+        if (this.isMobileDevice) {
+            // Set the real viewport height as a CSS variable
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            
+            // Apply additional offset for URL bar height on mobile browsers
+            const extraPadding = Math.max(0, 120 - (window.innerHeight * 0.1));
+            document.documentElement.style.setProperty('--url-bar-offset', `${extraPadding}px`);
+            
+            if (this.debugMode && window.GameLogger) {
+                GameLogger.debug(`Mobile viewport adjusted: vh=${vh}px, extraPadding=${extraPadding}px`);
+            }
+        }
+        
         // Update screen dimensions
         this.updateScreenDimensions();
         
@@ -505,6 +602,9 @@ const Game = {
             if (Player && typeof Player.ensureCorrectHeight === 'function') {
                 Player.ensureCorrectHeight();
             }
+            
+            // Also adjust ground height based on current viewport
+            this.applyDynamicAdjustments();
             
             if (window.GameLogger && this.debugMode) {
                 GameLogger.debug('Window resized, adjusting game elements');
@@ -1373,6 +1473,7 @@ const Game = {
         const scoreSpan = document.getElementById('new-high-score');
         const nameInput = document.getElementById('player-name');
         const submitButton = document.getElementById('submit-score');
+        const modalContent = modal.querySelector('.modal-content');
         
         // Store the fact that we came from death screen
         this.lastScreenBeforeHighScores = 'death-animation';
@@ -1385,11 +1486,35 @@ const Game = {
         submitButton.disabled = false;
         submitButton.textContent = 'Submit';
         
+        // Apply mobile-specific adjustments
+        if (this.isMobileDevice) {
+            // Use CSS variable for viewport height on mobile
+            if (modalContent) {
+                modalContent.style.maxHeight = 'calc(var(--vh, 1vh) * 70)';
+                modalContent.style.marginBottom = 'var(--url-bar-offset, 0px)';
+                
+                // Ensure keyboard doesn't push modal off-screen on mobile
+                
+                modal.style.paddingTop = '20%';
+            }
+            
+            // Make sure virtual keyboard doesn't cause issues
+            nameInput.style.fontSize = '14px';
+            nameInput.style.padding = '12px 8px';
+            
+            // Ensure input field is visible when keyboard appears
+            setTimeout(() => {
+                nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+        
         // Show the modal
         modal.style.display = 'flex';
         
-        // Focus the input
-        nameInput.focus();
+        // Focus the input after a short delay to ensure modal is visible
+        setTimeout(() => {
+            nameInput.focus();
+        }, 200);
         
         // Remove any existing event listeners to prevent duplicates
         nameInput.onkeypress = null;
@@ -1411,23 +1536,18 @@ const Game = {
             }
         });
         
-        // Filter input to only allow alphanumeric characters and spaces in real-time
+        // Validate input to prevent HTML injection
         nameInput.addEventListener('input', function() {
-            // Preserve cursor position
-            const cursorPos = this.selectionStart;
-            
-            // Replace any non-alphanumeric characters and spaces with empty string
-            const filteredValue = this.value.replace(/[^\w\s]/gi, '');
-            
-            // Only update if the value actually changed (to avoid unnecessary updates)
-            if (this.value !== filteredValue) {
-                this.value = filteredValue;
-                // Restore cursor position (adjusted if characters were removed)
-                this.setSelectionRange(cursorPos, cursorPos);
-            }
+            // Replace any HTML tags or special characters with safe alternatives
+            this.value = this.value
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         });
         
-        // Handle submit button click
+        // Set up the submit button
         submitButton.onclick = () => {
             // Disable the button to prevent multiple submissions
             submitButton.disabled = true;
@@ -1441,6 +1561,16 @@ const Game = {
                     if (success) {
                         // Hide the modal
                         modal.style.display = 'none';
+                        
+                        // Reset mobile-specific styles
+                        if (this.isMobileDevice) {
+                            modal.style.alignItems = '';
+                            modal.style.paddingTop = '';
+                            if (modalContent) {
+                                modalContent.style.maxHeight = '';
+                                modalContent.style.marginBottom = '';
+                            }
+                        }
                         
                         // Small delay before showing high score table
                         // This helps ensure DOM is properly reset between modal transitions
@@ -1465,7 +1595,7 @@ const Game = {
     },
     
     // Add method to show high score table
-    showHighScoreTable: function(fromDeathScreen, sourceScreen) {
+    showHighScoreTable: function(fromDeathScreen = false, sourceScreen = null) {
         this.lastScreenBeforeHighScores = sourceScreen || 'start-screen';
         
         const modal = document.getElementById('high-score-table-modal');
@@ -1476,12 +1606,25 @@ const Game = {
         // Clear existing rows
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading high scores...</td></tr>';
         
-        // Apply extra strong styling for the table container, especially for mobile
+        // Apply improved styling for the table container, optimized for mobile
         if (tableContainer) {
+            // Use CSS variable for viewport height
+            const mobileHeight = 'calc(var(--vh, 1vh) * 40)';
+            
+            // Reset any previous touch handlers
+            if (this._touchScrollHandler) {
+                tableContainer.removeEventListener('touchstart', this._touchScrollHandler);
+                tableContainer.removeEventListener('touchmove', this._touchScrollHandler);
+                tableContainer.removeEventListener('touchend', this._touchScrollHandler);
+            }
+            
+            // Remove any inline styles to start fresh
+            tableContainer.removeAttribute('style');
+            
             // Force direct inline styles with !important priority
             tableContainer.setAttribute('style', `
-                max-height: ${this.isMobileDevice ? '40vh' : '50vh'} !important;
-                overflow-y: ${this.isMobileDevice ? 'scroll' : 'auto'} !important;
+                max-height: ${this.isMobileDevice ? mobileHeight : '60vh'} !important;
+                overflow-y: scroll !important;
                 overflow-x: hidden !important;
                 -webkit-overflow-scrolling: touch !important;
                 transform: translateZ(0) !important;
@@ -1489,84 +1632,81 @@ const Game = {
                 display: block !important;
                 width: 100% !important;
                 border: 2px solid #4CAF50 !important;
-                ${fromDeathScreen ? 'height: 40vh !important;' : ''}
+                ${fromDeathScreen ? 'height: ' + mobileHeight + ' !important;' : ''}
+                padding-bottom: ${this.isMobileDevice ? 'var(--url-bar-offset, 0px)' : '0'} !important;
+                touch-action: pan-y !important;
+                position: relative !important;
             `);
+            
+            // For mobile devices, add enhanced touch handling
+            if (this.isMobileDevice) {
+                // Create a more robust touch handler for scrolling
+                this._touchScrollHandler = function(e) {
+                    // Allow default touch behavior for scrolling
+                    e.stopPropagation(); // Prevent parent elements from capturing the event
+                };
+                
+                // Apply touch events with passive: true to ensure smooth scrolling
+                tableContainer.addEventListener('touchstart', this._touchScrollHandler, { passive: true });
+                tableContainer.addEventListener('touchmove', this._touchScrollHandler, { passive: true });
+                tableContainer.addEventListener('touchend', this._touchScrollHandler, { passive: true });
+                
+                // Additional scrolling improvements for mobile
+                setTimeout(() => {
+                    // Make sure the table stretches to fill the container
+                    const table = tableContainer.querySelector('table');
+                    if (table) {
+                        table.style.minHeight = '101%'; // Force scrollbar to appear
+                    }
+                    
+                    // Force a layout recalculation
+                    void tableContainer.offsetHeight;
+                    
+                    // Small scroll to "wake up" the scrolling
+                    tableContainer.scrollTop = 1;
+                    setTimeout(() => tableContainer.scrollTop = 0, 50);
+                }, 200);
+            }
         }
         
         // Show the modal
         modal.style.display = 'flex';
         
-        // Get high scores
-        HighScores.getTopScores()
-            .then(scores => {
-                // Clear loading indicator
-                tableBody.innerHTML = '';
-                
-                // Add rows for each score
-                scores.forEach((score, index) => {
-                    const row = document.createElement('tr');
-                    
-                    // Highlight the current player's score
-                    if (score.score === this.score) {
-                        row.style.backgroundColor = 'rgba(255, 215, 0, 0.3)';
-                        row.style.fontWeight = 'bold';
-                    }
-                    
-                    // Format date (just show the date, not time)
-                    const formattedDate = score.date;
-                    
-                    // Add cells
-                    row.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>${score.name}</td>
-                        <td>${score.score}</td>
-                        <td>${formattedDate}</td>
-                    `;
-                    
-                    tableBody.appendChild(row);
-                });
-                
-                // If no scores, show message
-                if (scores.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No high scores yet!</td></tr>';
-                }
-                
-                // After loading, ensure scrolling is working
-                if (tableContainer) {
-                    // Force browser to recalculate layout
-                    void tableContainer.offsetHeight;
-                    
-                    // Try to scroll up and down slightly to "wake up" the scrolling
-                    setTimeout(() => {
-                        tableContainer.scrollTop = 1;
-                        setTimeout(() => {
-                            tableContainer.scrollTop = 0;
-                        }, 50);
-                    }, 200);
-                }
-            })
-            .catch(error => {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Error loading high scores. Please try again later.</td></tr>';
-                console.error("Error showing high score table:", error);
-            });
+        // Load high scores
+        if (typeof HighScores !== 'undefined' && HighScores.loadHighScores) {
+            // Make sure HighScores is initialized
+            if (!HighScores.initialized) {
+                HighScores.init();
+            }
+            HighScores.loadHighScores();
+        } else {
+            // Fallback if high scores module isn't available
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">High scores not available</td></tr>';
+        }
         
-        // Set handler for close button
-        closeButton.onclick = () => {
-            // Hide the modal
-            modal.style.display = 'none';
-            
-            // Show appropriate screen based on where we came from
-            if (this.lastScreenBeforeHighScores === 'death-animation') {
-                document.getElementById('death-animation').classList.remove('hidden');
-            }
-            
-            // Clean up styles
-            if (tableContainer) {
-                setTimeout(() => {
-                    tableContainer.scrollTop = 0;
-                }, 100);
-            }
-        };
+        // Set up close button
+        if (closeButton) {
+            closeButton.onclick = () => {
+                modal.style.display = 'none';
+                
+                // Return to the previous screen
+                if (this.lastScreenBeforeHighScores) {
+                    const previousScreen = document.getElementById(this.lastScreenBeforeHighScores);
+                    if (previousScreen) {
+                        previousScreen.classList.remove('hidden');
+                    }
+                    this.lastScreenBeforeHighScores = null;
+                }
+                
+                // Clean up scrolling handlers
+                if (tableContainer && this._touchScrollHandler) {
+                    tableContainer.removeEventListener('touchstart', this._touchScrollHandler);
+                    tableContainer.removeEventListener('touchmove', this._touchScrollHandler);
+                    tableContainer.removeEventListener('touchend', this._touchScrollHandler);
+                    this._touchScrollHandler = null;
+                }
+            };
+        }
     },
     
     // Update the reset method to clear countdowns

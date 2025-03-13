@@ -4,6 +4,7 @@ const HighScores = {
     initialized: false,
     
     init: function() {
+        console.log("Initializing HighScores system");
         // Initialize Firebase (you'll need to replace with your own Firebase config)
         const firebaseConfig = {
             apiKey: "AIzaSyCjn7iE7P3_44RVO_XtWrBuhaLAEdXtTaA",
@@ -17,13 +18,92 @@ const HighScores = {
         };
         
         // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            this.db = firebase.database();
+            this.initialized = true;
+            console.log("High score system initialized with Firebase");
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            // Fall back to local storage mode
+            this.initialized = false;
+            console.log("High score system will use local storage fallback");
         }
-        this.db = firebase.database();
-        this.initialized = true;
+    },
+    
+    // Load and populate high scores into the table
+    loadHighScores: function() {
+        console.log("loadHighScores called");
+        // Get the table body element
+        const tableBody = document.getElementById('high-score-table-body');
         
-        console.log("High score system initialized");
+        if (!tableBody) {
+            console.error("Could not find high score table body element");
+            return;
+        }
+        
+        // Clear the table and show loading
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading high scores...</td></tr>';
+        
+        // Ensure Firebase is initialized
+        if (!this.initialized) {
+            console.log("HighScores not initialized, calling init()");
+            this.init();
+        }
+        
+        // Get top scores
+        console.log("Calling getTopScores");
+        this.getTopScores(100)
+            .then(scores => {
+                console.log(`Received ${scores.length} high scores`);
+                // Clear loading indicator
+                tableBody.innerHTML = '';
+                
+                // If no scores, show message
+                if (scores.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No high scores yet!</td></tr>';
+                    return;
+                }
+                
+                // Add rows for each score
+                scores.forEach((score, index) => {
+                    const row = document.createElement('tr');
+                    
+                    // Highlight current player's score if it matches
+                    const isCurrentScore = Game && Game.score === score.score;
+                    if (isCurrentScore) {
+                        row.style.backgroundColor = 'rgba(255, 215, 0, 0.3)';
+                        row.style.fontWeight = 'bold';
+                    }
+                    
+                    // Add cells
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${score.name || 'Anonymous'}</td>
+                        <td>${score.score}</td>
+                        <td>${score.date || 'Unknown'}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // Add a deliberate delay to ensure the table has time to render
+                setTimeout(() => {
+                    // Force a reflow of the table container to ensure scroll works
+                    const container = document.querySelector('.high-score-table-container');
+                    if (container) {
+                        void container.offsetHeight;
+                        container.scrollTop = 1;
+                        setTimeout(() => container.scrollTop = 0, 50);
+                    }
+                }, 200);
+            })
+            .catch(error => {
+                console.error("Error loading high scores:", error);
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Error loading high scores. Please try again later.</td></tr>';
+            });
     },
     
     // Submit a new high score
@@ -87,7 +167,17 @@ const HighScores = {
     
     // Get top 100 high scores
     getTopScores: function(limit = 100) {
-        if (!this.initialized) this.init();
+        console.log(`getTopScores called with limit=${limit}, initialized=${this.initialized}`);
+        if (!this.initialized) {
+            console.log("HighScores not initialized in getTopScores, calling init()");
+            this.init();
+        }
+        
+        // If Firebase is still not initialized after trying, use local storage
+        if (!this.initialized || !this.db) {
+            console.log("Using local storage fallback (no Firebase)");
+            return Promise.resolve(this.getLocalScores(limit));
+        }
         
         return this.db.ref('highscores')
             .orderByChild('score')
@@ -102,19 +192,16 @@ const HighScores = {
                     });
                 });
                 
+                console.log(`Retrieved ${scores.length} scores from Firebase`);
                 // Sort in descending order
                 return scores.sort((a, b) => b.score - a.score);
             })
             .catch(error => {
                 console.error("Error getting high scores:", error);
                 
-                // If permission denied, try local fallback
-                if (error.message && error.message.includes("PERMISSION_DENIED")) {
-                    console.log("Using local storage fallback for high scores");
-                    return this.getLocalScores(limit);
-                }
-                
-                return [];
+                // If permission denied or any other error, try local fallback
+                console.log("Using local storage fallback due to Firebase error");
+                return this.getLocalScores(limit);
             });
     },
     
