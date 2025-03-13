@@ -114,46 +114,65 @@ const GameStats = {
      * @param {number} score - The score from the current game
      */
     recordGamePlayed: function(score) {
-        // Update local stats
-        this.statsData.localGamesPlayed++;
-        
-        // Save updated stats
-        this.saveLocalStats();
-        
-        // Try to update global stats if Firebase is available
-        if (this.initialized && this.db) {
-            // Check if we should use HighScores authentication status if available
-            const useFirebase = typeof HighScores === 'undefined' || HighScores.authenticated;
+        try {
+            // Update local stats
+            this.statsData.localGamesPlayed++;
             
-            if (useFirebase) {
-                // Create game record
-                const gameRecord = {
-                    score: score,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
-                    sessionId: this.statsData.lastSessionId
-                };
+            // Save updated stats
+            this.saveLocalStats();
+            
+            // Try to update global stats if Firebase is available
+            if (this.initialized && this.db) {
+                // Check if we should use HighScores authentication status if available
+                const useFirebase = typeof HighScores === 'undefined' || HighScores.authenticated;
                 
-                // Update global stats
-                this.db.ref('stats/games').push(gameRecord)
-                    .then(() => {
-                        console.log('Game recorded in global stats');
-                    })
-                    .catch(error => {
-                        console.error('Error recording game in global stats:', error);
-                    });
-                    
-                // Update total games counter
-                this.db.ref('stats/totals/gamesPlayed').transaction(current => {
-                    return (current || 0) + 1;
-                }).catch(error => {
-                    console.error('Error updating total games played:', error);
-                });
-                
-                // Update unique players count based on session IDs
-                this.updateUniquePlayers();
-            } else {
-                console.log('Firebase auth not available, storing stats locally only');
+                if (useFirebase) {
+                    // Wrap Firebase operations in try/catch to prevent game errors
+                    try {
+                        // Create game record
+                        const gameRecord = {
+                            score: score,
+                            timestamp: firebase.database.ServerValue.TIMESTAMP,
+                            sessionId: this.statsData.lastSessionId
+                        };
+                        
+                        // Update global stats
+                        this.db.ref('stats/games').push(gameRecord)
+                            .then(() => {
+                                console.log('Game recorded in global stats');
+                            })
+                            .catch(error => {
+                                // Check for permission errors
+                                if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
+                                    console.log('Permission denied when recording game. Check Firebase rules or authentication.');
+                                } else {
+                                    console.error('Error recording game in global stats:', error);
+                                }
+                            });
+                            
+                        // Update total games counter
+                        this.db.ref('stats/totals/gamesPlayed').transaction(current => {
+                            return (current || 0) + 1;
+                        }).catch(error => {
+                            // Check for permission errors
+                            if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
+                                console.log('Permission denied when updating game count. Check Firebase rules or authentication.');
+                            } else {
+                                console.error('Error updating total games played:', error);
+                            }
+                        });
+                        
+                        // Update unique players count based on session IDs
+                        this.updateUniquePlayers();
+                    } catch (innerError) {
+                        console.error('Error in Firebase operations:', innerError);
+                    }
+                } else {
+                    console.log('Firebase auth not available, storing stats locally only');
+                }
             }
+        } catch (error) {
+            console.error('Error in recordGamePlayed:', error);
         }
     },
     
@@ -163,79 +182,60 @@ const GameStats = {
     updateUniquePlayers: function() {
         if (!this.initialized || !this.db) return;
         
-        // Check if this session has already been counted
-        this.db.ref('stats/sessions').child(this.statsData.lastSessionId).once('value')
-            .then(snapshot => {
-                if (!snapshot.exists()) {
-                    // This is a new session, record it
-                    this.db.ref('stats/sessions').child(this.statsData.lastSessionId).set({
-                        startTime: this.statsData.sessionStartTime,
-                        lastActive: firebase.database.ServerValue.TIMESTAMP
-                    });
-                    
-                    // Increment unique players counter
-                    this.db.ref('stats/totals/uniquePlayers').transaction(current => {
-                        return (current || 0) + 1;
-                    }).catch(error => {
-                        console.error('Error updating unique players count:', error);
-                    });
-                } else {
-                    // Session exists, just update last active time
-                    this.db.ref('stats/sessions').child(this.statsData.lastSessionId).update({
-                        lastActive: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error checking session:', error);
-            });
-    },
-    
-    /**
-     * Update the unique players counter in Firebase
-     */
-    updateUniquePlayersCounter: function() {
-        if (!this.initialized || !this.db) return;
-        
-        // Check if authenticated
-        const isAuthenticated = typeof HighScores !== 'undefined' && HighScores.authenticated;
-        if (!isAuthenticated) {
-            console.log("Not authenticated, cannot update unique players counter");
-            return;
-        }
-        
-        // Check if this session has already been counted
-        this.db.ref('sessions').child(this.statsData.lastSessionId).once('value')
-            .then(snapshot => {
-                if (!snapshot.exists()) {
-                    // This is a new session, record it
-                    this.db.ref('sessions').child(this.statsData.lastSessionId).set({
-                        startTime: this.statsData.sessionStartTime,
-                        lastActive: firebase.database.ServerValue.TIMESTAMP
-                    });
-                    
-                    // Increment unique players counter
-                    this.db.ref('gameStats').transaction((currentStats) => {
-                        if (currentStats === null) {
-                            return { uniquePlayers: 1 };
-                        }
+        try {
+            // Check if this session has already been counted
+            this.db.ref('stats/sessions').child(this.statsData.lastSessionId).once('value')
+                .then(snapshot => {
+                    if (!snapshot.exists()) {
+                        // This is a new session, record it
+                        this.db.ref('stats/sessions').child(this.statsData.lastSessionId).set({
+                            startTime: this.statsData.sessionStartTime,
+                            lastActive: firebase.database.ServerValue.TIMESTAMP
+                        }).catch(error => {
+                            // Handle permission errors gracefully
+                            if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
+                                console.log('Permission denied when recording session. Check Firebase rules or authentication.');
+                            } else {
+                                console.error('Error recording session:', error);
+                            }
+                        });
                         
-                        currentStats.uniquePlayers = (currentStats.uniquePlayers || 0) + 1;
-                        return currentStats;
-                    });
-                } else {
-                    // Session exists, just update last active time
-                    this.db.ref('sessions').child(this.statsData.lastSessionId).update({
-                        lastActive: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error updating unique players:', error);
-                if (window.GameLogger) {
-                    GameLogger.error('Error updating unique players', error);
-                }
-            });
+                        // Increment unique players counter
+                        this.db.ref('stats/totals/uniquePlayers').transaction(current => {
+                            return (current || 0) + 1;
+                        }).catch(error => {
+                            // Handle permission errors gracefully
+                            if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
+                                console.log('Permission denied when updating unique players count. Check Firebase rules or authentication.');
+                            } else {
+                                console.error('Error updating unique players count:', error);
+                            }
+                        });
+                    } else {
+                        // Session exists, just update last active time
+                        this.db.ref('stats/sessions').child(this.statsData.lastSessionId).update({
+                            lastActive: firebase.database.ServerValue.TIMESTAMP
+                        }).catch(error => {
+                            // Handle permission errors gracefully
+                            if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
+                                console.log('Permission denied when updating session. Check Firebase rules or authentication.');
+                            } else {
+                                console.error('Error updating session:', error);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    // Handle permission errors gracefully
+                    if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
+                        console.log('Permission denied when checking session. Check Firebase rules or authentication.');
+                    } else {
+                        console.error('Error checking session:', error);
+                    }
+                });
+        } catch (error) {
+            console.error('Error in updateUniquePlayers:', error);
+        }
     },
     
     /**
@@ -306,10 +306,10 @@ const GameStats = {
             }
             
             // Adjust modal position to account for URL bar on mobile
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.style.marginBottom = 'var(--url-bar-offset, 0px)';
-            }
+            //const modalContent = modal.querySelector('.modal-content');
+            //if (modalContent) {
+              //  modalContent.style.marginBottom = 'var(--url-bar-offset, 0px)';
+            //}
         }
         
         // Check for authentication status

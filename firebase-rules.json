@@ -4,14 +4,16 @@
     "highscores": {
       ".write": "auth !== null"
     },
-    "gameStats": {
-      ".write": "auth !== null"
-    },
-    "games": {
-      ".write": "auth !== null"
-    },
-    "sessions": {
-      ".write": "auth !== null"
+    "stats": {
+      "games": {
+        ".write": "auth !== null"
+      },
+      "totals": {
+        ".write": "auth !== null"
+      },
+      "sessions": {
+        ".write": "auth !== null"
+      }
     }
   }
 } 
