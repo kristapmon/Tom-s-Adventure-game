@@ -223,7 +223,7 @@ select, input[type="checkbox"] {
     bottom: 0;
     width: 93px;
     height: 139px;
-    background-image: url('img/tree.png');
+    background-image: url('img/tree.svg');
     background-size: contain;
     background-repeat: no-repeat;
     image-rendering: pixelated;

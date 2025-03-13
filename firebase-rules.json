@@ -1,0 +1,17 @@
+{
+  "rules": {
+    ".read": true,
+    "highscores": {
+      ".write": "auth !== null"
+    },
+    "gameStats": {
+      ".write": "auth !== null"
+    },
+    "games": {
+      ".write": "auth !== null"
+    },
+    "sessions": {
+      ".write": "auth !== null"
+    }
+  }
+} 

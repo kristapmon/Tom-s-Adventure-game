@@ -20,6 +20,21 @@ const GameStats = {
         if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
             this.db = firebase.database();
             this.initialized = true;
+            
+            // Check if authentication is available through HighScores module
+            if (typeof HighScores !== 'undefined') {
+                // Wait a bit for HighScores to attempt authentication
+                setTimeout(() => {
+                    // Use HighScores authentication status if available
+                    if (HighScores.authenticated) {
+                        console.log("Using authentication from HighScores module");
+                    } else {
+                        console.log("HighScores module not authenticated, stats will be stored locally only");
+                    }
+                }, 2000);
+            } else {
+                console.log("HighScores module not available, stats will be stored locally only");
+            }
         } else {
             console.warn('Firebase not available. Stats will only be tracked locally.');
         }
@@ -95,55 +110,85 @@ const GameStats = {
     },
     
     /**
-     * Record a completed game
-     * @param {number} score - The score achieved in the game
+     * Record a game being played
+     * @param {number} score - The score from the current game
      */
     recordGamePlayed: function(score) {
-        // Increment local games played counter
+        // Update local stats
         this.statsData.localGamesPlayed++;
+        
+        // Save updated stats
         this.saveLocalStats();
         
-        // Record to Firebase if available
+        // Try to update global stats if Firebase is available
         if (this.initialized && this.db) {
-            // Record the game in the games collection
-            this.db.ref('games').push({
-                sessionId: this.statsData.lastSessionId,
-                score: score,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            }).catch(error => {
-                console.error('Error recording game to Firebase:', error);
-                if (window.GameLogger) {
-                    GameLogger.error('Error recording game to Firebase', error);
-                }
-            });
+            // Check if we should use HighScores authentication status if available
+            const useFirebase = typeof HighScores === 'undefined' || HighScores.authenticated;
             
-            // Update the global stats counters
-            const statsRef = this.db.ref('gameStats');
-            statsRef.transaction((currentStats) => {
-                if (currentStats === null) {
-                    return {
-                        totalGamesPlayed: 1,
-                        totalScore: score,
-                        uniquePlayers: 1
-                    };
-                }
+            if (useFirebase) {
+                // Create game record
+                const gameRecord = {
+                    score: score,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    sessionId: this.statsData.lastSessionId
+                };
                 
-                // Increment games played and total score
-                currentStats.totalGamesPlayed = (currentStats.totalGamesPlayed || 0) + 1;
-                currentStats.totalScore = (currentStats.totalScore || 0) + score;
+                // Update global stats
+                this.db.ref('stats/games').push(gameRecord)
+                    .then(() => {
+                        console.log('Game recorded in global stats');
+                    })
+                    .catch(error => {
+                        console.error('Error recording game in global stats:', error);
+                    });
+                    
+                // Update total games counter
+                this.db.ref('stats/totals/gamesPlayed').transaction(current => {
+                    return (current || 0) + 1;
+                }).catch(error => {
+                    console.error('Error updating total games played:', error);
+                });
                 
-                // We'll handle unique players in a separate transaction
-                return currentStats;
-            }).catch(error => {
-                console.error('Error updating game stats:', error);
-                if (window.GameLogger) {
-                    GameLogger.error('Error updating game stats', error);
-                }
-            });
-            
-            // Update unique players counter
-            this.updateUniquePlayersCounter();
+                // Update unique players count based on session IDs
+                this.updateUniquePlayers();
+            } else {
+                console.log('Firebase auth not available, storing stats locally only');
+            }
         }
+    },
+    
+    /**
+     * Update unique players count based on session IDs
+     */
+    updateUniquePlayers: function() {
+        if (!this.initialized || !this.db) return;
+        
+        // Check if this session has already been counted
+        this.db.ref('stats/sessions').child(this.statsData.lastSessionId).once('value')
+            .then(snapshot => {
+                if (!snapshot.exists()) {
+                    // This is a new session, record it
+                    this.db.ref('stats/sessions').child(this.statsData.lastSessionId).set({
+                        startTime: this.statsData.sessionStartTime,
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    
+                    // Increment unique players counter
+                    this.db.ref('stats/totals/uniquePlayers').transaction(current => {
+                        return (current || 0) + 1;
+                    }).catch(error => {
+                        console.error('Error updating unique players count:', error);
+                    });
+                } else {
+                    // Session exists, just update last active time
+                    this.db.ref('stats/sessions').child(this.statsData.lastSessionId).update({
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error checking session:', error);
+            });
     },
     
     /**
@@ -151,6 +196,13 @@ const GameStats = {
      */
     updateUniquePlayersCounter: function() {
         if (!this.initialized || !this.db) return;
+        
+        // Check if authenticated
+        const isAuthenticated = typeof HighScores !== 'undefined' && HighScores.authenticated;
+        if (!isAuthenticated) {
+            console.log("Not authenticated, cannot update unique players counter");
+            return;
+        }
         
         // Check if this session has already been counted
         this.db.ref('sessions').child(this.statsData.lastSessionId).once('value')
@@ -260,35 +312,42 @@ const GameStats = {
             }
         }
         
-        // Fetch global stats if Firebase is available
-        if (this.initialized && this.db) {
-            this.db.ref('gameStats').once('value')
-                .then(snapshot => {
-                    const stats = snapshot.val() || { totalGamesPlayed: 0, uniquePlayers: 0, totalScore: 0 };
-                    
-                    // Update displayed stats
-                    globalGamesCount.textContent = stats.totalGamesPlayed.toString();
-                    uniquePlayers.textContent = stats.uniquePlayers.toString();
-                    
-                    // Calculate average score
-                    const avg = stats.totalGamesPlayed > 0 
-                        ? Math.round(stats.totalScore / stats.totalGamesPlayed) 
-                        : 0;
-                    averageScore.textContent = avg.toString();
-                })
-                .catch(error => {
-                    console.error('Error fetching game stats:', error);
-                    if (window.GameLogger) {
-                        GameLogger.error('Error fetching game stats', error);
+        // Check for authentication status
+        const isAuthenticated = typeof HighScores !== 'undefined' && HighScores.authenticated;
+        
+        // If not authenticated and Firebase is available, check if we can authenticate
+        if (!isAuthenticated && this.initialized && this.db) {
+            // Try to authenticate using HighScores module
+            if (typeof HighScores !== 'undefined' && typeof HighScores.initAuth === 'function') {
+                HighScores.initAuth();
+                
+                // Show "authenticating" status
+                globalGamesCount.textContent = "Authenticating...";
+                uniquePlayers.textContent = "Authenticating...";
+                averageScore.textContent = "Authenticating...";
+                
+                // Check authentication status after a short delay
+                setTimeout(() => {
+                    if (HighScores.authenticated) {
+                        // Now we're authenticated, fetch the stats
+                        this.fetchAndDisplayStats(globalGamesCount, uniquePlayers, averageScore);
+                    } else {
+                        // Still not authenticated
+                        globalGamesCount.textContent = "Authentication Failed";
+                        uniquePlayers.textContent = "Authentication Failed";
+                        averageScore.textContent = "Authentication Failed";
                     }
-                    
-                    // Handle error in UI
-                    globalGamesCount.textContent = "Error";
-                    uniquePlayers.textContent = "Error";
-                    averageScore.textContent = "Error";
-                });
+                }, 2000);
+                
+                return;
+            }
+        }
+        
+        // Fetch global stats if Firebase is available and authenticated
+        if (this.initialized && this.db && isAuthenticated) {
+            this.fetchAndDisplayStats(globalGamesCount, uniquePlayers, averageScore);
         } else {
-            // Set fallback values if Firebase isn't available
+            // Set fallback values if Firebase isn't available or not authenticated
             globalGamesCount.textContent = "N/A";
             uniquePlayers.textContent = "N/A";
             averageScore.textContent = "N/A";
@@ -312,6 +371,53 @@ const GameStats = {
                 }
             };
         }
+    },
+    
+    /**
+     * Fetch and display game statistics from Firebase
+     */
+    fetchAndDisplayStats: function(globalGamesCount, uniquePlayers, averageScore) {
+        this.db.ref('stats/totals').once('value')
+            .then(snapshot => {
+                const stats = snapshot.val() || { gamesPlayed: 0, uniquePlayers: 0 };
+                
+                // Update displayed stats
+                globalGamesCount.textContent = stats.gamesPlayed ? stats.gamesPlayed.toString() : "0";
+                uniquePlayers.textContent = stats.uniquePlayers ? stats.uniquePlayers.toString() : "0";
+                
+                // Calculate average score from the games collection
+                this.db.ref('stats/games').once('value')
+                    .then(gamesSnapshot => {
+                        let totalScore = 0;
+                        let count = 0;
+                        
+                        gamesSnapshot.forEach(gameSnapshot => {
+                            const gameData = gameSnapshot.val();
+                            if (gameData && typeof gameData.score === 'number') {
+                                totalScore += gameData.score;
+                                count++;
+                            }
+                        });
+                        
+                        const avg = count > 0 ? Math.round(totalScore / count) : 0;
+                        averageScore.textContent = avg.toString();
+                    })
+                    .catch(error => {
+                        console.error('Error calculating average score:', error);
+                        averageScore.textContent = "Error";
+                    });
+            })
+            .catch(error => {
+                console.error('Error fetching game stats:', error);
+                if (window.GameLogger) {
+                    GameLogger.error('Error fetching game stats', error);
+                }
+                
+                // Handle error in UI
+                globalGamesCount.textContent = "Error";
+                uniquePlayers.textContent = "Error";
+                averageScore.textContent = "Error";
+            });
     }
 };
 

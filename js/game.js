@@ -13,7 +13,7 @@ const Game = {
     animationId: null,
     scoreInterval: null,
     debugMode: false, // Default to false, will be set from settings
-    version: '1.6.1', // Updated version with improved high score system
+    version: '1.7.0', // Updated version with increased base speed
     messageTimeout: null,
     isMobileDevice: false, // Flag for mobile device detection
     screenWidth: window.innerWidth,
@@ -695,12 +695,16 @@ const Game = {
         document.getElementById('game-over').classList.add('hidden');
         document.getElementById('death-animation').classList.add('hidden');
         
+        // Get difficulty settings
+        const difficultySettings = getCurrentDifficultySettings();
+        
         // Reset game state
         this.gameStarted = true;
         this.gameOver = false;
         this.score = 0;
-        this.speed = CONFIG.BASE_SPEED;
-        this.targetSpeed = CONFIG.BASE_SPEED; // Initialize target speed
+        // Apply difficulty multiplier to base speed (this was missing before)
+        this.speed = CONFIG.BASE_SPEED * difficultySettings.SPEED_MULTIPLIER;
+        this.targetSpeed = this.speed; // Initialize target speed with the modified value
         this.speedIncreaseInProgress = false;
         
         // Update score display
@@ -1195,7 +1199,7 @@ const Game = {
         this.gameStarted = false;
         this.gameOver = false;
         this.score = 0;
-        this.speed = CONFIG.BASE_SPEED;
+        this.speed = CONFIG.BASE_SPEED; // Basic reset to the base speed
         
         // Update score display
         this.updateScoreDisplay();

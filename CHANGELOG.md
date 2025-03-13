@@ -37,8 +37,13 @@ This file documents all notable changes to Tom's Adventure game.
 - Mobile-specific adjustments for high score and stats modals
 - Improved mobile viewport handling for all game elements
 - Better handling of virtual keyboard behavior on mobile devices
+- Firebase security rules to restrict database write access
+- Anonymous authentication for secure data submission
+- Enhanced security for high scores and game statistics
+- Improved error handling for Firebase operations
 
 ### Changed
+- Increased base game speed from 5 to 8 for a more exciting gameplay experience
 - Increased speed increment amount from 0.5 to 0.8 for more challenging gameplay
 - Added dramatic speed increase curve with rapid acceleration, plateau, and final burst
 - Enhanced speed increase notifications with pulsing red/yellow text and larger font
