@@ -5,7 +5,9 @@ const HighScores = {
     authenticated: false,
     
     init: function() {
-        console.log("Initializing HighScores system");
+        if (window.Game && window.Game.debugMode) {
+            console.log("Initializing HighScores system");
+        }
         // Initialize Firebase (you'll need to replace with your own Firebase config)
         const firebaseConfig = {
             apiKey: "AIzaSyCjn7iE7P3_44RVO_XtWrBuhaLAEdXtTaA",
@@ -25,16 +27,22 @@ const HighScores = {
             }
             this.db = firebase.database();
             this.initialized = true;
-            console.log("High score system initialized with Firebase");
+            if (window.Game && window.Game.debugMode) {
+                console.log("High score system initialized with Firebase");
+            }
             
             // Initialize anonymous authentication
             this.initAuth();
         } catch (error) {
-            console.error("Firebase initialization error:", error);
+            if (window.Game && window.Game.debugMode) {
+                console.error("Firebase initialization error:", error);
+            }
             // Fall back to local storage mode
             this.initialized = false;
             this.authenticated = false;
-            console.log("High score system will use local storage fallback");
+            if (window.Game && window.Game.debugMode) {
+                console.log("High score system will use local storage fallback");
+            }
         }
     },
     
@@ -46,7 +54,9 @@ const HighScores = {
         
         // Check if user is already signed in
         if (auth.currentUser) {
-            console.log("User already authenticated");
+            if (window.Game && window.Game.debugMode) {
+                console.log("User already authenticated");
+            }
             this.authenticated = true;
             return;
         }
@@ -54,42 +64,55 @@ const HighScores = {
         // Sign in anonymously
         auth.signInAnonymously()
             .then(() => {
-                console.log("Anonymous authentication successful");
                 this.authenticated = true;
+                if (window.Game && window.Game.debugMode) {
+                    console.log("Anonymous authentication successful");
+                }
             })
             .catch((error) => {
-                console.error("Anonymous authentication failed:", error);
                 this.authenticated = false;
-                
-                // NEW CODE: If we get CONFIGURATION_NOT_FOUND, it means Auth isn't enabled
-                if (error.message && error.message.includes("CONFIGURATION_NOT_FOUND")) {
-                    console.log("Firebase Authentication not enabled in console - using local storage only");
-                    // Keep initialized true but set authenticated to false to use the database without auth
-                    this.initialized = true;
-                    this.authenticated = false;
+                if (window.Game && window.Game.debugMode) {
+                    console.error("Anonymous authentication failed:", error);
                 }
             });
+            
+        // If Firebase auth isn't configured properly, fall back to local storage
+        setTimeout(() => {
+            if (!this.authenticated && this.initialized) {
+                if (window.Game && window.Game.debugMode) {
+                    console.log("Firebase Authentication not enabled in console - using local storage only");
+                }
+            }
+        }, 3000);
         
-        // Set up auth state changed listener
+        // Set up auth state change listener
         auth.onAuthStateChanged((user) => {
             if (user) {
-                console.log("User is signed in with uid:", user.uid);
                 this.authenticated = true;
+                if (window.Game && window.Game.debugMode) {
+                    console.log("User is signed in with uid:", user.uid);
+                }
             } else {
-                console.log("User is signed out");
                 this.authenticated = false;
+                if (window.Game && window.Game.debugMode) {
+                    console.log("User is signed out");
+                }
             }
         });
     },
     
     // Load and populate high scores into the table
     loadHighScores: function() {
-        console.log("loadHighScores called");
+        if (window.Game && window.Game.debugMode) {
+            console.log("loadHighScores called");
+        }
         // Get the table body element
         const tableBody = document.getElementById('high-score-table-body');
         
         if (!tableBody) {
-            console.error("Could not find high score table body element");
+            if (window.Game && window.Game.debugMode) {
+                console.error("Could not find high score table body element");
+            }
             return;
         }
         
@@ -98,15 +121,21 @@ const HighScores = {
         
         // Ensure Firebase is initialized
         if (!this.initialized) {
-            console.log("HighScores not initialized, calling init()");
+            if (window.Game && window.Game.debugMode) {
+                console.log("HighScores not initialized, calling init()");
+            }
             this.init();
         }
         
         // Get top scores
-        console.log("Calling getTopScores");
+        if (window.Game && window.Game.debugMode) {
+            console.log("Calling getTopScores");
+        }
         this.getTopScores(100)
             .then(scores => {
-                console.log(`Received ${scores.length} high scores`);
+                if (window.Game && window.Game.debugMode) {
+                    console.log(`Received ${scores.length} high scores`);
+                }
                 // Clear loading indicator
                 tableBody.innerHTML = '';
                 
@@ -150,7 +179,9 @@ const HighScores = {
                 }, 200);
             })
             .catch(error => {
-                console.error("Error loading high scores:", error);
+                if (window.Game && window.Game.debugMode) {
+                    console.error("Error loading high scores:", error);
+                }
                 tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Error loading high scores. Please try again later.</td></tr>';
             });
     },
@@ -170,11 +201,15 @@ const HighScores = {
         
         // If not authenticated, try to authenticate before submitting
         if (!this.authenticated && this.initialized) {
-            console.log("Not authenticated, attempting to authenticate before submission");
+            if (window.Game && window.Game.debugMode) {
+                console.log("Not authenticated, attempting to authenticate before submission");
+            }
             // NEW CODE: Check if we should try to authenticate or just use local storage
             if (this._authAttempted) {
                 // If we've already tried to authenticate and it failed, just use local storage
-                console.log("Authentication previously failed, using local storage instead");
+                if (window.Game && window.Game.debugMode) {
+                    console.log("Authentication previously failed, using local storage instead");
+                }
                 this.saveScoreLocally(scoreData);
                 return Promise.resolve(true);
             }
@@ -183,7 +218,9 @@ const HighScores = {
         
         // If Firebase is initialized but not authenticated, store locally
         if (this.initialized && !this.authenticated) {
-            console.log("Firebase initialized but not authenticated, using local storage");
+            if (window.Game && window.Game.debugMode) {
+                console.log("Firebase initialized but not authenticated, using local storage");
+            }
             this.saveScoreLocally(scoreData);
             return Promise.resolve(true);
         }
@@ -191,20 +228,28 @@ const HighScores = {
         // Add to high scores list
         return this.db.ref('highscores').push(scoreData)
             .then(() => {
-                console.log("Score submitted successfully");
+                if (window.Game && window.Game.debugMode) {
+                    console.log("Score submitted successfully");
+                }
                 return true;
             })
             .catch(error => {
-                console.error("Error submitting score:", error);
+                if (window.Game && window.Game.debugMode) {
+                    console.error("Error submitting score:", error);
+                }
                 
                 // If permission denied, try to authenticate and retry
                 if (error.message && error.message.includes("PERMISSION_DENIED")) {
-                    console.log("Permission denied, trying to authenticate");
+                    if (window.Game && window.Game.debugMode) {
+                        console.log("Permission denied, trying to authenticate");
+                    }
                     return this.authenticateAndSubmit(scoreData);
                 }
                 
                 // Final fallback: save locally
-                console.log("Using local storage fallback for high scores");
+                if (window.Game && window.Game.debugMode) {
+                    console.log("Using local storage fallback for high scores");
+                }
                 this.saveScoreLocally(scoreData);
                 return true; // Return true so the UI continues
             });
@@ -220,18 +265,24 @@ const HighScores = {
             
             auth.signInAnonymously()
                 .then(() => {
-                    console.log("Authentication successful, submitting score");
+                    if (window.Game && window.Game.debugMode) {
+                        console.log("Authentication successful, submitting score");
+                    }
                     this.authenticated = true;
                     
                     // Retry submission after successful authentication
                     return this.db.ref('highscores').push(scoreData);
                 })
                 .then(() => {
-                    console.log("Score submitted after authentication");
+                    if (window.Game && window.Game.debugMode) {
+                        console.log("Score submitted after authentication");
+                    }
                     resolve(true);
                 })
                 .catch(error => {
-                    console.error("Authentication or submission failed:", error);
+                    if (window.Game && window.Game.debugMode) {
+                        console.error("Authentication or submission failed:", error);
+                    }
                     
                     // Fall back to local storage
                     this.saveScoreLocally(scoreData);
@@ -260,29 +311,41 @@ const HighScores = {
             // Save back to localStorage
             localStorage.setItem('highScores', JSON.stringify(localScores));
             
-            console.log("Score saved locally");
+            if (window.Game && window.Game.debugMode) {
+                console.log("Score saved locally");
+            }
         } catch (e) {
-            console.error("Error saving score locally:", e);
+            if (window.Game && window.Game.debugMode) {
+                console.error("Error saving score locally:", e);
+            }
         }
     },
     
     // Get top 100 high scores
     getTopScores: function(limit = 100) {
-        console.log(`getTopScores called with limit=${limit}, initialized=${this.initialized}`);
+        if (window.Game && window.Game.debugMode) {
+            console.log(`getTopScores called with limit=${limit}, initialized=${this.initialized}`);
+        }
         if (!this.initialized) {
-            console.log("HighScores not initialized in getTopScores, calling init()");
+            if (window.Game && window.Game.debugMode) {
+                console.log("HighScores not initialized in getTopScores, calling init()");
+            }
             this.init();
         }
         
         // If Firebase is still not initialized after trying, use local storage
         if (!this.initialized || !this.db) {
-            console.log("Using local storage fallback (no Firebase)");
+            if (window.Game && window.Game.debugMode) {
+                console.log("Using local storage fallback (no Firebase)");
+            }
             return Promise.resolve(this.getLocalScores(limit));
         }
         
         // NEW CODE: If Firebase is initialized but not authenticated, use local storage
         if (this.initialized && !this.authenticated) {
-            console.log("Firebase initialized but not authenticated, using local storage for scores");
+            if (window.Game && window.Game.debugMode) {
+                console.log("Firebase initialized but not authenticated, using local storage for scores");
+            }
             return Promise.resolve(this.getLocalScores(limit));
         }
         
@@ -299,15 +362,21 @@ const HighScores = {
                     });
                 });
                 
-                console.log(`Retrieved ${scores.length} scores from Firebase`);
+                if (window.Game && window.Game.debugMode) {
+                    console.log(`Retrieved ${scores.length} scores from Firebase`);
+                }
                 // Sort in descending order
                 return scores.sort((a, b) => b.score - a.score);
             })
             .catch(error => {
-                console.error("Error getting high scores:", error);
+                if (window.Game && window.Game.debugMode) {
+                    console.error("Error getting high scores:", error);
+                }
                 
                 // If permission denied or any other error, try local fallback
-                console.log("Using local storage fallback due to Firebase error");
+                if (window.Game && window.Game.debugMode) {
+                    console.log("Using local storage fallback due to Firebase error");
+                }
                 return this.getLocalScores(limit);
             });
     },
@@ -318,7 +387,9 @@ const HighScores = {
             const localScores = JSON.parse(localStorage.getItem('highScores')) || [];
             return localScores.slice(0, limit);
         } catch (e) {
-            console.error("Error getting local scores:", e);
+            if (window.Game && window.Game.debugMode) {
+                console.error("Error getting local scores:", e);
+            }
             return [];
         }
     },

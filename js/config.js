@@ -72,14 +72,14 @@ const CONFIG = {
             },
             GOLD: {
                 NAME: 'gold',
-                SCORE_BONUS: 100,
+                SCORE_BONUS: 150,
                 PROBABILITY: 0.4
             },
             WHISKEY: {
                 NAME: 'whiskey',
                 EFFECT_DURATION: 5000,
-                SPEED_MULTIPLIER: 1.5,
-                JUMP_DELAY: 300,
+                SPEED_MULTIPLIER: 0.5,
+                JUMP_DELAY: 200,
                 PROBABILITY: 0.3
             }
         }
@@ -126,7 +126,7 @@ const CONFIG = {
                 TROLL_POINTS: 10 // Reduced from 50
             },
             GOLD: {
-                POINTS: 100
+                POINTS: 150
             },
             WHISKEY: {
                 DURATION: 10000, // 10 seconds
@@ -144,13 +144,16 @@ function loadSavedSettings() {
         const settings = JSON.parse(savedSettings);
         
         // Apply saved settings
-        if (settings.difficulty) {
-            document.getElementById('difficulty').value = settings.difficulty;
-        }
+        // Note: difficulty selection has been removed, so we no longer need to set it
         
         if (settings.soundEnabled !== undefined) {
             CONFIG.SOUND_ENABLED = settings.soundEnabled;
             document.getElementById('sound-toggle').checked = settings.soundEnabled;
+        }
+        
+        // Load debug mode setting
+        if (settings.debugMode !== undefined && document.getElementById('debug-toggle')) {
+            document.getElementById('debug-toggle').checked = settings.debugMode;
         }
     }
 }
@@ -158,17 +161,25 @@ function loadSavedSettings() {
 // Save current settings
 function saveSettings() {
     const settings = {
-        difficulty: document.getElementById('difficulty').value,
         soundEnabled: document.getElementById('sound-toggle').checked
     };
+    
+    // Add debug mode if it exists
+    const debugToggle = document.getElementById('debug-toggle');
+    if (debugToggle) {
+        settings.debugMode = debugToggle.checked;
+    }
     
     localStorage.setItem(CONFIG.STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
 }
 
 // Get current difficulty settings
 function getCurrentDifficultySettings() {
-    const difficulty = document.getElementById('difficulty').value;
-    return CONFIG.DIFFICULTY[difficulty];
+    // Always use medium difficulty but with hard troll spawn rate
+    const mediumSettings = CONFIG.DIFFICULTY['medium'];
+    // Override the troll spawn rate with hard difficulty value
+    mediumSettings.TROLL_SPAWN_RATE = CONFIG.DIFFICULTY['hard'].TROLL_SPAWN_RATE;
+    return mediumSettings;
 }
 
 // Update sound setting

@@ -66,30 +66,24 @@
         </div>
         
         <div id="settings-screen" class="hidden">
-            <h2>Settings</h2>
-            <div class="setting">
-                <label for="difficulty">Difficulty:</label>
-                <select id="difficulty">
-                    <option value="easy">Easy</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
+            <div class="settings-content">
+                <h2>Settings</h2>
+                <div class="setting">
+                    <label for="sound-toggle">Sound:</label>
+                    <input type="checkbox" id="sound-toggle" checked>
+                </div>
+                <div class="setting">
+                    <label for="debug-toggle">Debug Mode:</label>
+                    <input type="checkbox" id="debug-toggle">
+                </div>
+                <div class="setting">
+                    <button id="export-logs">Export Logs</button>
+                </div>
+                <div class="setting">
+                    <button id="stats-btn">STATS</button>
+                </div>
+                <button id="back-btn">Back</button>
             </div>
-            <div class="setting">
-                <label for="sound-toggle">Sound:</label>
-                <input type="checkbox" id="sound-toggle" checked>
-            </div>
-            <div class="setting">
-                <label for="debug-toggle">Debug Mode:</label>
-                <input type="checkbox" id="debug-toggle">
-            </div>
-            <div class="setting">
-                <button id="export-logs">Export Logs</button>
-            </div>
-            <div class="setting">
-                <button id="stats-btn">STATS</button>
-            </div>
-            <button id="back-btn">Back</button>
         </div>
         
         <div id="game-over" class="hidden">
@@ -212,7 +206,9 @@
         function initAudioOnInteraction() {
             if (typeof AudioManager !== 'undefined') {
                 AudioManager.init();
-                console.log('Audio initialized on user interaction');
+                if (Game && Game.debugMode) {
+                    console.log('Audio initialized on user interaction');
+                }
                 // Remove the event listeners once audio is initialized
                 document.removeEventListener('click', initAudioOnInteraction);
                 document.removeEventListener('keydown', initAudioOnInteraction);

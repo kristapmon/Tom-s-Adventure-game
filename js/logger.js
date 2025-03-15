@@ -140,21 +140,24 @@ const Logger = {
         // Format for console
         const consoleMessage = `[${timestamp}] [${levelName}] ${message}`;
         
-        // Output to console based on level
-        switch (level) {
-            case this.LEVELS.DEBUG:
-                console.debug(consoleMessage, data || '');
-                break;
-            case this.LEVELS.INFO:
-                console.info(consoleMessage, data || '');
-                break;
-            case this.LEVELS.WARN:
-                console.warn(consoleMessage, data || '');
-                break;
-            case this.LEVELS.ERROR:
-            case this.LEVELS.FATAL:
-                console.error(consoleMessage, data || '');
-                break;
+        // Only output to console when debug mode is enabled in the Game object
+        if (window.Game && window.Game.debugMode) {
+            // Output to console based on level
+            switch (level) {
+                case this.LEVELS.DEBUG:
+                    console.debug(consoleMessage, data || '');
+                    break;
+                case this.LEVELS.INFO:
+                    console.info(consoleMessage, data || '');
+                    break;
+                case this.LEVELS.WARN:
+                    console.warn(consoleMessage, data || '');
+                    break;
+                case this.LEVELS.ERROR:
+                case this.LEVELS.FATAL:
+                    console.error(consoleMessage, data || '');
+                    break;
+            }
         }
         
         // Save to file
@@ -182,7 +185,10 @@ const Logger = {
                 window.electronAPI.writeToLogFile(logLine);
             }
         } catch (e) {
-            console.error('Failed to save log to file:', e);
+            // Only log file save errors to console when in debug mode
+            if (window.Game && window.Game.debugMode) {
+                console.error('Failed to save log to file:', e);
+            }
         }
     },
     
@@ -215,7 +221,10 @@ const Logger = {
             
             this.info('Logs exported successfully');
         } catch (e) {
-            console.error('Failed to export logs:', e);
+            // Only log export errors to console when in debug mode
+            if (window.Game && window.Game.debugMode) {
+                console.error('Failed to export logs:', e);
+            }
         }
     },
     

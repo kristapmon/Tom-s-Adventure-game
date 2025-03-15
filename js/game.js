@@ -30,6 +30,10 @@ const Game = {
      * Initialize the game
      */
     init: function() {
+        if (this.debugMode) {
+            console.log("Game initialization started");
+        }
+        
         // Detect mobile device
         this.detectMobileDevice();
         
@@ -681,15 +685,26 @@ const Game = {
      * Start the game
      */
     startGame: function() {
+        // First, ensure complete cleanup of previous game elements
+        this.cleanup();
+        
         // Log game start
         if (window.GameLogger) {
             GameLogger.info('Game started');
         }
         
-        // First, ensure complete cleanup of previous game elements
-        this.cleanup();
+        // Reset game state
+        this.gameStarted = true;
+        this.gameOver = false;
+        this.score = 0;
+        this.speed = CONFIG.BASE_SPEED;
+        this.targetSpeed = this.speed;
+        this.speedIncreaseInProgress = false;
         
-        // Hide all screens
+        // Update score display
+        document.getElementById('score').textContent = `Score: ${this.score}`;
+        
+        // Hide start screen and all other screens
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('settings-screen').classList.add('hidden');
         document.getElementById('game-over').classList.add('hidden');
@@ -698,17 +713,9 @@ const Game = {
         // Get difficulty settings
         const difficultySettings = getCurrentDifficultySettings();
         
-        // Reset game state
-        this.gameStarted = true;
-        this.gameOver = false;
-        this.score = 0;
-        // Apply difficulty multiplier to base speed (this was missing before)
+        // Set initial speed based on difficulty
+        // Apply difficulty multiplier to base speed
         this.speed = CONFIG.BASE_SPEED * difficultySettings.SPEED_MULTIPLIER;
-        this.targetSpeed = this.speed; // Initialize target speed with the modified value
-        this.speedIncreaseInProgress = false;
-        
-        // Update score display
-        document.getElementById('score').textContent = `Score: 0`;
         
         // Initialize game entities
         Player.init();
@@ -717,16 +724,19 @@ const Game = {
         MountainManager.init();
         TreeManager.init();
         SunManager.init();
-        PowerUpManager.init(); // Initialize power-ups
+        PowerUpManager.init();
         
-        // Ensure player is at the correct height
+        // Ensure player is at correct height
         Player.ensureCorrectHeight();
         
         // Start comments
         CommentsManager.init();
         CommentsManager.startComments();
         
-        // Start game loop
+        // Apply dynamic adjustments for proper sizing
+        this.applyDynamicAdjustments();
+        
+        // Start the game loop
         this.startGameLoop();
         
         // Start score counter
@@ -838,6 +848,14 @@ const Game = {
                 if (!Player.isInvincible) {
                     this.endGame();
                 } else {
+                    // Skip if we've already collided with this troll
+                    if (troll.collided) {
+                        return;
+                    }
+                    
+                    // Mark this troll as already collided
+                    troll.collided = true;
+                    
                     // If invincible, remove the troll instead
                     troll.element.style.animation = 'collect 0.5s forwards';
                     setTimeout(() => {
@@ -1129,13 +1147,13 @@ const Game = {
      * Clean up game resources
      */
     cleanup: function() {
-        // Cancel animation frame
+        // Cancel game loop
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
         }
         
-        // Clear score interval
+        // Cancel score counter
         if (this.scoreInterval) {
             clearInterval(this.scoreInterval);
             this.scoreInterval = null;
@@ -1148,34 +1166,43 @@ const Game = {
         }
         
         // Clean up entities
-        Player.cleanup();
-        TrollManager.cleanup();
-        CloudManager.cleanup();
-        MountainManager.cleanup();
-        TreeManager.cleanup();
-        SunManager.cleanup();
-        PowerUpManager.cleanup(); // Clean up power-ups
-        CommentsManager.clearIntervals();
+        if (Player) Player.cleanup();
+        if (TrollManager) TrollManager.cleanup();
+        if (CloudManager) CloudManager.cleanup();
+        if (MountainManager) MountainManager.cleanup();
+        if (TreeManager) TreeManager.cleanup();
+        if (SunManager) SunManager.cleanup();
+        if (PowerUpManager) PowerUpManager.cleanup();
+        if (CommentsManager) CommentsManager.clearIntervals();
         
         // Reset player state
-        Player.isInvincible = false;
-        Player.isDrunk = false;
-        
-        // Clear timeouts
-        if (Player.invincibilityTimeout) {
-            clearTimeout(Player.invincibilityTimeout);
-            Player.invincibilityTimeout = null;
+        if (Player) {
+            Player.isInvincible = false;
+            Player.isDrunk = false;
+            
+            // Clear timeouts
+            if (Player.invincibilityTimeout) {
+                clearTimeout(Player.invincibilityTimeout);
+                Player.invincibilityTimeout = null;
+            }
+            
+            if (Player.drunkTimeout) {
+                clearTimeout(Player.drunkTimeout);
+                Player.drunkTimeout = null;
+            }
+            
+            if (Player.jumpDelayTimeout) {
+                clearTimeout(Player.jumpDelayTimeout);
+                Player.jumpDelayTimeout = null;
+            }
         }
         
-        if (Player.drunkTimeout) {
-            clearTimeout(Player.drunkTimeout);
-            Player.drunkTimeout = null;
-        }
-        
-        if (Player.jumpDelayTimeout) {
-            clearTimeout(Player.jumpDelayTimeout);
-            Player.jumpDelayTimeout = null;
-        }
+        // Remove any power-up effects that might be showing
+        const powerUpCountdowns = document.querySelectorAll('.power-up-countdown');
+        powerUpCountdowns.forEach(element => {
+            element.style.display = 'none';
+            element.style.width = '0%';
+        });
         
         // Reset comment bubble
         const commentBubble = document.getElementById('comment-bubble');
@@ -1195,122 +1222,37 @@ const Game = {
             messageDisplay.parentNode.removeChild(messageDisplay);
         }
         
-        // Reset game state
-        this.gameStarted = false;
-        this.gameOver = false;
-        this.score = 0;
-        this.speed = CONFIG.BASE_SPEED; // Basic reset to the base speed
-        
-        // Update score display
-        this.updateScoreDisplay();
-        
         if (this.debugMode) {
             console.log('Game cleaned up');
         }
     },
     
     /**
-     * Force a complete reset of the game state
-     * This is a more aggressive reset than cleanup()
+     * Force reset game state (for development)
      */
     forceReset: function() {
-        // Stop all ongoing processes
-        if (this.scoreInterval) {
-            clearInterval(this.scoreInterval);
-            this.scoreInterval = null;
-        }
+        // Clear any game loops
+        this.cleanup();
         
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-            this.animationId = null;
-        }
+        // Reset entity managers
+        TrollManager.reset();
+        CloudManager.reset();
+        MountainManager.reset();
+        TreeManager.reset();
+        PowerUpManager.reset();
+        Player.reset();
         
-        // Reset all game state variables
+        // Reset game state
         this.gameStarted = false;
         this.gameOver = false;
         this.score = 0;
-        this.speed = CONFIG.BASE_SPEED;
         
-        // Reset player state
-        Player.jumping = false;
-        Player.jumpHeight = 0;
-        Player.floatTime = 0;
-        Player.isHoldingJump = false;
-        
-        // Clear all game elements from the DOM
-        this.removeAllGameElements();
-        
-        // Reset all entity arrays
-        TrollManager.trolls = [];
-        TrollManager.nextId = 0;
-        CloudManager.clouds = [];
-        CloudManager.nextId = 0;
-        MountainManager.mountains = [];
-        MountainManager.nextId = 0;
-        
-        // Clear all intervals in other modules
-        if (Player.legAnimationInterval) {
-            clearInterval(Player.legAnimationInterval);
-            Player.legAnimationInterval = null;
-        }
-        
-        CommentsManager.clearIntervals();
+        // Show start screen
+        this.showStartScreen();
         
         if (this.debugMode) {
             console.log("Game state forcefully reset");
         }
-    },
-    
-    /**
-     * Remove all game elements from the DOM
-     */
-    removeAllGameElements: function() {
-        // Get the game container
-        const gameContainer = document.getElementById('game-container');
-        
-        // Remove all trolls
-        const trolls = document.querySelectorAll('.troll');
-        trolls.forEach(troll => {
-            if (troll.parentNode) {
-                troll.parentNode.removeChild(troll);
-            }
-        });
-        
-        // Remove all clouds
-        const clouds = document.querySelectorAll('.cloud');
-        clouds.forEach(cloud => {
-            if (cloud.parentNode) {
-                cloud.parentNode.removeChild(cloud);
-            }
-        });
-        
-        // Clear mountains container
-        const mountainsContainer = document.getElementById('mountains');
-        if (mountainsContainer) {
-            mountainsContainer.innerHTML = '';
-        }
-        
-        // Reset player element
-        const player = document.getElementById('player');
-        if (player) {
-            player.innerHTML = '';
-            player.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`;
-            player.style.transform = 'translateZ(10px)';
-        }
-        
-        // Clear comment bubble container
-        const commentBubbleContainer = document.getElementById('comment-bubble-container');
-        if (commentBubbleContainer) {
-            commentBubbleContainer.innerHTML = '';
-        }
-        
-        // Remove any other game elements that might be lingering
-        const gameElements = document.querySelectorAll('.game-element');
-        gameElements.forEach(element => {
-            if (element.parentNode) {
-                element.parentNode.removeChild(element);
-            }
-        });
     },
     
     /**
@@ -1905,7 +1847,7 @@ const Game = {
 document.addEventListener('DOMContentLoaded', function() {
     Game.init();
     
-    // Add event listeners for restart buttons
+    // Add event listener for restart button
     const restartButtons = [
         document.getElementById('restart-btn'),
         document.getElementById('death-restart')
@@ -1914,15 +1856,11 @@ document.addEventListener('DOMContentLoaded', function() {
     restartButtons.forEach(button => {
         if (button) {
             button.addEventListener('click', function() {
-                // Save high score
-                if (Game.score > Game.highScore) {
-                    Game.highScore = Game.score;
-                    Game.saveHighScore();
-                }
+                // Reset game state
+                Game.gameOver = false;
                 
-                // Hide game over and death screens
-                document.getElementById('game-over').classList.add('hidden');
-                document.getElementById('death-animation').classList.add('hidden');
+                // Clean up existing game elements
+                Game.cleanup();
                 
                 // Start a new game immediately
                 Game.startGame();

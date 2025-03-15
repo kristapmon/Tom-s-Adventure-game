@@ -27,16 +27,24 @@ const GameStats = {
                 setTimeout(() => {
                     // Use HighScores authentication status if available
                     if (HighScores.authenticated) {
-                        console.log("Using authentication from HighScores module");
+                        if (window.Game && window.Game.debugMode) {
+                            console.log("Using authentication from HighScores module");
+                        }
                     } else {
-                        console.log("HighScores module not authenticated, stats will be stored locally only");
+                        if (window.Game && window.Game.debugMode) {
+                            console.log("HighScores module not authenticated, stats will be stored locally only");
+                        }
                     }
                 }, 2000);
             } else {
-                console.log("HighScores module not available, stats will be stored locally only");
+                if (window.Game && window.Game.debugMode) {
+                    console.log("HighScores module not available, stats will be stored locally only");
+                }
             }
         } else {
-            console.warn('Firebase not available. Stats will only be tracked locally.');
+            if (window.Game && window.Game.debugMode) {
+                console.warn('Firebase not available. Stats will only be tracked locally.');
+            }
         }
         
         // Load local stats
@@ -88,7 +96,9 @@ const GameStats = {
                 this.statsData = JSON.parse(savedStats);
             }
         } catch (e) {
-            console.error('Error loading local stats:', e);
+            if (window.Game && window.Game.debugMode) {
+                console.error('Error loading local stats:', e);
+            }
             if (window.GameLogger) {
                 GameLogger.error('Error loading local stats', e);
             }
@@ -102,7 +112,9 @@ const GameStats = {
         try {
             localStorage.setItem(CONFIG.STORAGE_KEYS.STATS, JSON.stringify(this.statsData));
         } catch (e) {
-            console.error('Error saving local stats:', e);
+            if (window.Game && window.Game.debugMode) {
+                console.error('Error saving local stats:', e);
+            }
             if (window.GameLogger) {
                 GameLogger.error('Error saving local stats', e);
             }
@@ -139,14 +151,20 @@ const GameStats = {
                         // Update global stats
                         this.db.ref('stats/games').push(gameRecord)
                             .then(() => {
-                                console.log('Game recorded in global stats');
+                                if (window.Game && window.Game.debugMode) {
+                                    console.log('Game recorded in global stats');
+                                }
                             })
                             .catch(error => {
                                 // Check for permission errors
                                 if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
-                                    console.log('Permission denied when recording game. Check Firebase rules or authentication.');
+                                    if (window.Game && window.Game.debugMode) {
+                                        console.log('Permission denied when recording game. Check Firebase rules or authentication.');
+                                    }
                                 } else {
-                                    console.error('Error recording game in global stats:', error);
+                                    if (window.Game && window.Game.debugMode) {
+                                        console.error('Error recording game in global stats:', error);
+                                    }
                                 }
                             });
                             
@@ -156,23 +174,33 @@ const GameStats = {
                         }).catch(error => {
                             // Check for permission errors
                             if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
-                                console.log('Permission denied when updating game count. Check Firebase rules or authentication.');
+                                if (window.Game && window.Game.debugMode) {
+                                    console.log('Permission denied when updating game count. Check Firebase rules or authentication.');
+                                }
                             } else {
-                                console.error('Error updating total games played:', error);
+                                if (window.Game && window.Game.debugMode) {
+                                    console.error('Error updating total games played:', error);
+                                }
                             }
                         });
                         
                         // Update unique players count based on session IDs
                         this.updateUniquePlayers();
                     } catch (innerError) {
-                        console.error('Error in Firebase operations:', innerError);
+                        if (window.Game && window.Game.debugMode) {
+                            console.error('Error in Firebase operations:', innerError);
+                        }
                     }
                 } else {
-                    console.log('Firebase auth not available, storing stats locally only');
+                    if (window.Game && window.Game.debugMode) {
+                        console.log('Firebase auth not available, storing stats locally only');
+                    }
                 }
             }
         } catch (error) {
-            console.error('Error in recordGamePlayed:', error);
+            if (window.Game && window.Game.debugMode) {
+                console.error('Error in recordGamePlayed:', error);
+            }
         }
     },
     
@@ -194,9 +222,13 @@ const GameStats = {
                         }).catch(error => {
                             // Handle permission errors gracefully
                             if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
-                                console.log('Permission denied when recording session. Check Firebase rules or authentication.');
+                                if (window.Game && window.Game.debugMode) {
+                                    console.log('Permission denied when recording session. Check Firebase rules or authentication.');
+                                }
                             } else {
-                                console.error('Error recording session:', error);
+                                if (window.Game && window.Game.debugMode) {
+                                    console.error('Error recording session:', error);
+                                }
                             }
                         });
                         
@@ -206,9 +238,13 @@ const GameStats = {
                         }).catch(error => {
                             // Handle permission errors gracefully
                             if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
-                                console.log('Permission denied when updating unique players count. Check Firebase rules or authentication.');
+                                if (window.Game && window.Game.debugMode) {
+                                    console.log('Permission denied when updating unique players count. Check Firebase rules or authentication.');
+                                }
                             } else {
-                                console.error('Error updating unique players count:', error);
+                                if (window.Game && window.Game.debugMode) {
+                                    console.error('Error updating unique players count:', error);
+                                }
                             }
                         });
                     } else {
@@ -218,9 +254,13 @@ const GameStats = {
                         }).catch(error => {
                             // Handle permission errors gracefully
                             if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
-                                console.log('Permission denied when updating session. Check Firebase rules or authentication.');
+                                if (window.Game && window.Game.debugMode) {
+                                    console.log('Permission denied when updating session. Check Firebase rules or authentication.');
+                                }
                             } else {
-                                console.error('Error updating session:', error);
+                                if (window.Game && window.Game.debugMode) {
+                                    console.error('Error updating session:', error);
+                                }
                             }
                         });
                     }
@@ -228,13 +268,19 @@ const GameStats = {
                 .catch(error => {
                     // Handle permission errors gracefully
                     if (error && error.message && (error.message.includes('permission_denied') || error.message.includes('PERMISSION_DENIED'))) {
-                        console.log('Permission denied when checking session. Check Firebase rules or authentication.');
+                        if (window.Game && window.Game.debugMode) {
+                            console.log('Permission denied when checking session. Check Firebase rules or authentication.');
+                        }
                     } else {
-                        console.error('Error checking session:', error);
+                        if (window.Game && window.Game.debugMode) {
+                            console.error('Error checking session:', error);
+                        }
                     }
                 });
         } catch (error) {
-            console.error('Error in updateUniquePlayers:', error);
+            if (window.Game && window.Game.debugMode) {
+                console.error('Error in updateUniquePlayers:', error);
+            }
         }
     },
     
@@ -403,12 +449,16 @@ const GameStats = {
                         averageScore.textContent = avg.toString();
                     })
                     .catch(error => {
-                        console.error('Error calculating average score:', error);
+                        if (window.Game && window.Game.debugMode) {
+                            console.error('Error calculating average score:', error);
+                        }
                         averageScore.textContent = "Error";
                     });
             })
             .catch(error => {
-                console.error('Error fetching game stats:', error);
+                if (window.Game && window.Game.debugMode) {
+                    console.error('Error fetching game stats:', error);
+                }
                 if (window.GameLogger) {
                     GameLogger.error('Error fetching game stats', error);
                 }
