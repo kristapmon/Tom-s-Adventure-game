@@ -83,6 +83,11 @@ This file documents all notable changes to Tom's Adventure game.
 - Enhanced mobile touchscreen interactions with better tap response
 - Fixed unit inconsistency between jumping and landing in mobile view
 - Ensured consistent positioning of all UI elements across mobile and desktop views
+- Fixed bug in config.js where `loadSavedSettings` function was trying to access a non-existent 'difficulty' element
+- Fixed bug in config.js where `saveSettings` function was referencing a removed 'difficulty' element
+- Removed Phaser.js toggle from settings screen as it's no longer used
+- Fixed issue where multiple points were awarded when colliding with trolls while invincible
+- Fixed gold power-up score discrepancy by ensuring all references use the same score value (150 points)
 
 ## [1.6.1] - 2023-09-15
 
