@@ -41,6 +41,7 @@ This file documents all notable changes to Tom's Adventure game.
 - Anonymous authentication for secure data submission
 - Enhanced security for high scores and game statistics
 - Improved error handling for Firebase operations
+- Cache-busting mechanism that automatically updates file URLs when game version changes, preventing users from seeing outdated cached files
 
 ### Changed
 - Increased base game speed from 5 to 8 for a more exciting gameplay experience

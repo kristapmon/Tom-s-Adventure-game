@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tom's Adventure</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=1.7.1">
     <!-- Use a CDN for the font to avoid local file issues -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
@@ -183,12 +183,62 @@
     <audio id="joke-sound" preload="none" src="./sounds/joke.mp3"></audio>
 
     <!-- Scripts with explicit relative paths -->
-    <script src="./js/config.js"></script>
-    <script src="./js/logger.js"></script>
-    <script src="./js/audio.js"></script>
-    <script src="./js/entities.js"></script>
-    <script src="./js/comments.js"></script>
-    <script src="./js/game.js"></script>
+    <script src="./js/config.js?v=1.7.1"></script>
+    <script>
+        // Wait for the config to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add version from CONFIG to all script tags and stylesheets when the page loads
+            // This ensures future updates will automatically use the correct version
+            if (window.CONFIG && window.Game && Game.version) {
+                // Function to update version in URLs
+                const updateVersionInUrls = function() {
+                    // Get all script tags
+                    const scripts = document.querySelectorAll('script[src]');
+                    
+                    // Update version in script URLs
+                    scripts.forEach(script => {
+                        const src = script.getAttribute('src');
+                        // Only update local scripts (not CDN ones)
+                        if (src && src.startsWith('./')) {
+                            // If URL already has a version parameter, replace it
+                            if (src.includes('?v=')) {
+                                script.setAttribute('src', src.replace(/\?v=[\d\.]+/, `?v=${Game.version}`));
+                            } else {
+                                // Otherwise add the version parameter
+                                script.setAttribute('src', `${src}?v=${Game.version}`);
+                            }
+                        }
+                    });
+                    
+                    // Update version in stylesheet URLs
+                    const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
+                    stylesheets.forEach(stylesheet => {
+                        const href = stylesheet.getAttribute('href');
+                        // Only update local stylesheets (not CDN ones)
+                        if (href && href.startsWith('./')) {
+                            // If URL already has a version parameter, replace it
+                            if (href.includes('?v=')) {
+                                stylesheet.setAttribute('href', href.replace(/\?v=[\d\.]+/, `?v=${Game.version}`));
+                            } else {
+                                // Otherwise add the version parameter
+                                stylesheet.setAttribute('href', `${href}?v=${Game.version}`);
+                            }
+                        }
+                    });
+                    
+                    console.log(`Updated asset URLs to use version ${Game.version}`);
+                };
+                
+                // Update URLs when game initializes
+                setTimeout(updateVersionInUrls, 500);
+            }
+        });
+    </script>
+    <script src="./js/logger.js?v=1.7.1"></script>
+    <script src="./js/audio.js?v=1.7.1"></script>
+    <script src="./js/entities.js?v=1.7.1"></script>
+    <script src="./js/comments.js?v=1.7.1"></script>
+    <script src="./js/game.js?v=1.7.1"></script>
 
     <!-- Add Firebase SDK before your game scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -196,10 +246,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <!-- Add the highscores.js script -->
-    <script src="./js/highscores.js"></script>
+    <script src="./js/highscores.js?v=1.7.1"></script>
     
     <!-- Add the stats.js script -->
-    <script src="./js/stats.js"></script>
+    <script src="./js/stats.js?v=1.7.1"></script>
     
     <script>
         // Initialize audio on any user interaction with the page
