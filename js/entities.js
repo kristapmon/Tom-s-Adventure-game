@@ -622,6 +622,22 @@ const TrollManager = {
 const TreeManager = {
     trees: [],
     nextId: 0,
+    // Track which tree images have been checked and which exist
+    imageChecked: {
+        pine: false,
+        oak: false,
+        maple: false,
+        birch: false,
+        willow: false
+    },
+    imageExists: {
+        pine: false,
+        oak: false,
+        maple: false,
+        birch: false,
+        willow: false
+    },
+    
     treeTypes: [
         {
             name: 'pine',
@@ -656,11 +672,69 @@ const TreeManager = {
     ],
     
     /**
+     * Check if an image exists
+     * @param {string} url - The URL of the image to check
+     * @return {Promise} - Resolves to true if image exists, false otherwise
+     */
+    checkImageExists: function(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                resolve(true);
+            };
+            img.onerror = function() {
+                resolve(false);
+            };
+            img.src = url;
+        });
+    },
+    
+    /**
+     * Check if a tree image exists
+     * @param {string} treeName - The name of the tree to check
+     * @return {Promise<boolean>} - Resolves to true if image exists, false otherwise
+     */
+    checkTreeImage: async function(treeName) {
+        // If we've already checked this tree type, return the cached result
+        if (this.imageChecked[treeName]) {
+            return this.imageExists[treeName];
+        }
+        
+        // Check if the tree image exists
+        const exists = await this.checkImageExists(`./img/tree-${treeName}.png`);
+        
+        // Cache the result
+        this.imageChecked[treeName] = true;
+        this.imageExists[treeName] = exists;
+        
+        if (window.GameLogger && Game.debugMode) {
+            GameLogger.debug(`Tree image for ${treeName} ${exists ? 'found' : 'not found'}`);
+        }
+        
+        return exists;
+    },
+    
+    /**
      * Initialize the tree manager
      */
     init: function() {
         this.trees = [];
         this.nextId = 0;
+        
+        // Reset image check flags
+        for (const treeName in this.imageChecked) {
+            this.imageChecked[treeName] = false;
+            this.imageExists[treeName] = false;
+        }
+        
+        // Check if tree images exist for all tree types
+        this.treeTypes.forEach(treeType => {
+            this.checkTreeImage(treeType.name).then(exists => {
+                if (window.GameLogger && Game.debugMode && exists) {
+                    GameLogger.debug(`Using image for ${treeType.name} trees`);
+                }
+            });
+        });
         
         // Create initial trees across the screen
         const screenWidth = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
@@ -683,6 +757,12 @@ const TreeManager = {
         // Randomly select a tree type
         const treeTypeIndex = Math.floor(Math.random() * this.treeTypes.length);
         const treeType = this.treeTypes[treeTypeIndex];
+        
+        // Check if we have an image for this tree type
+        if (!this.imageChecked[treeType.name]) {
+            // Start the check process if not already checked
+            this.checkTreeImage(treeType.name);
+        }
         
         // Create tree object
         const tree = {
@@ -707,61 +787,73 @@ const TreeManager = {
         // Ensure trees are always in front of mountains regardless of depth
         treeElement.style.zIndex = Math.max(11, Math.floor(tree.depth) + 20);
         
-        // Create tree HTML based on type
-        let treeHTML = '';
-        
-        switch(treeType.shape) {
-            case 'triangle': // Pine tree
-                treeHTML = `
-                    <div style="position: absolute; bottom: 0; left: 25%; width: 50%; height: 30%; background-color: ${treeType.trunkColor};"></div>
-                    <div style="position: absolute; bottom: 30%; left: 0; width: 0; height: 0; 
-                        border-left: ${tree.size/2}px solid transparent; 
-                        border-right: ${tree.size/2}px solid transparent; 
-                        border-bottom: ${tree.size}px solid ${treeType.color};"></div>
-                    <div style="position: absolute; bottom: 50%; left: 10%; width: 0; height: 0; 
-                        border-left: ${tree.size*0.4}px solid transparent; 
-                        border-right: ${tree.size*0.4}px solid transparent; 
-                        border-bottom: ${tree.size*0.8}px solid ${treeType.color};"></div>
-                    <div style="position: absolute; bottom: 70%; left: 20%; width: 0; height: 0; 
-                        border-left: ${tree.size*0.3}px solid transparent; 
-                        border-right: ${tree.size*0.3}px solid transparent; 
-                        border-bottom: ${tree.size*0.6}px solid ${treeType.color};"></div>
-                `;
-                break;
-                
-            case 'round': // Oak tree
-                treeHTML = `
-                    <div style="position: absolute; bottom: 0; left: 40%; width: 20%; height: 40%; background-color: ${treeType.trunkColor};"></div>
-                    <div style="position: absolute; bottom: 35%; left: 10%; width: 80%; height: 70%; background-color: ${treeType.color}; border-radius: 50%;"></div>
-                `;
-                break;
-                
-            case 'oval': // Maple tree
-                treeHTML = `
-                    <div style="position: absolute; bottom: 0; left: 40%; width: 20%; height: 50%; background-color: ${treeType.trunkColor};"></div>
-                    <div style="position: absolute; bottom: 45%; left: 5%; width: 90%; height: 60%; background-color: ${treeType.color}; border-radius: 40% 40% 60% 60%;"></div>
-                `;
-                break;
-                
-            case 'slim': // Birch tree
-                treeHTML = `
-                    <div style="position: absolute; bottom: 0; left: 45%; width: 10%; height: 80%; background-color: ${treeType.trunkColor};"></div>
-                    <div style="position: absolute; bottom: 60%; left: 20%; width: 60%; height: 50%; background-color: ${treeType.color}; border-radius: 40%;"></div>
-                `;
-                break;
-                
-            case 'weeping': // Willow tree
-                treeHTML = `
-                    <div style="position: absolute; bottom: 0; left: 45%; width: 10%; height: 60%; background-color: ${treeType.trunkColor};"></div>
-                    <div style="position: absolute; bottom: 50%; left: 10%; width: 80%; height: 60%; background-color: ${treeType.color}; border-radius: 50% 50% 0 0;"></div>
-                    <div style="position: absolute; bottom: 30%; left: 0; width: 100%; height: 30%; 
-                        background: linear-gradient(to bottom, ${treeType.color}, transparent); 
-                        border-radius: 0 0 40% 40%;"></div>
-                `;
-                break;
+        // Check if we have an image for this tree type
+        if (this.imageExists[treeType.name]) {
+            // Use the tree image
+            treeElement.style.backgroundImage = `url('./img/tree-${treeType.name}.png')`;
+            treeElement.style.backgroundSize = 'contain';
+            treeElement.style.backgroundRepeat = 'no-repeat';
+            treeElement.style.backgroundPosition = 'bottom center';
+            
+            // No inner HTML needed when using image
+            treeElement.innerHTML = '';
+        } else {
+            // Create tree HTML based on type (fallback)
+            let treeHTML = '';
+            
+            switch(treeType.shape) {
+                case 'triangle': // Pine tree
+                    treeHTML = `
+                        <div style="position: absolute; bottom: 0; left: 25%; width: 50%; height: 30%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: 30%; left: 0; width: 0; height: 0; 
+                            border-left: ${tree.size/2}px solid transparent; 
+                            border-right: ${tree.size/2}px solid transparent; 
+                            border-bottom: ${tree.size}px solid ${treeType.color};"></div>
+                        <div style="position: absolute; bottom: 50%; left: 10%; width: 0; height: 0; 
+                            border-left: ${tree.size*0.4}px solid transparent; 
+                            border-right: ${tree.size*0.4}px solid transparent; 
+                            border-bottom: ${tree.size*0.8}px solid ${treeType.color};"></div>
+                        <div style="position: absolute; bottom: 70%; left: 20%; width: 0; height: 0; 
+                            border-left: ${tree.size*0.3}px solid transparent; 
+                            border-right: ${tree.size*0.3}px solid transparent; 
+                            border-bottom: ${tree.size*0.6}px solid ${treeType.color};"></div>
+                    `;
+                    break;
+                    
+                case 'round': // Oak tree
+                    treeHTML = `
+                        <div style="position: absolute; bottom: 0; left: 40%; width: 20%; height: 40%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: 35%; left: 10%; width: 80%; height: 70%; background-color: ${treeType.color}; border-radius: 50%;"></div>
+                    `;
+                    break;
+                    
+                case 'oval': // Maple tree
+                    treeHTML = `
+                        <div style="position: absolute; bottom: 0; left: 40%; width: 20%; height: 50%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: 45%; left: 5%; width: 90%; height: 60%; background-color: ${treeType.color}; border-radius: 40% 40% 60% 60%;"></div>
+                    `;
+                    break;
+                    
+                case 'slim': // Birch tree
+                    treeHTML = `
+                        <div style="position: absolute; bottom: 0; left: 45%; width: 10%; height: 80%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: 60%; left: 20%; width: 60%; height: 50%; background-color: ${treeType.color}; border-radius: 40%;"></div>
+                    `;
+                    break;
+                    
+                case 'weeping': // Willow tree
+                    treeHTML = `
+                        <div style="position: absolute; bottom: 0; left: 45%; width: 10%; height: 60%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: 50%; left: 10%; width: 80%; height: 60%; background-color: ${treeType.color}; border-radius: 50% 50% 0 0;"></div>
+                        <div style="position: absolute; bottom: 30%; left: 0; width: 100%; height: 30%; 
+                            background: linear-gradient(to bottom, ${treeType.color}, transparent); 
+                            border-radius: 0 0 40% 40%;"></div>
+                    `;
+                    break;
+            }
+            
+            treeElement.innerHTML = treeHTML;
         }
-        
-        treeElement.innerHTML = treeHTML;
         
         // Add to game container
         document.getElementById('game-container').appendChild(treeElement);
