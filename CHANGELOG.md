@@ -92,6 +92,7 @@ This file documents all notable changes to Tom's Adventure game.
 - Removed Phaser.js toggle from settings screen as it's no longer used
 - Fixed issue where multiple points were awarded when colliding with trolls while invincible
 - Fixed gold power-up score discrepancy by ensuring all references use the same score value (150 points)
+- Fixed issue where tree images weren't immediately displayed when starting a game, ensuring images are properly loaded before trees are created
 
 ## [1.6.1] - 2023-09-15
 

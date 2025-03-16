@@ -727,24 +727,54 @@ const TreeManager = {
             this.imageExists[treeName] = false;
         }
         
-        // Check if tree images exist for all tree types
-        this.treeTypes.forEach(treeType => {
-            this.checkTreeImage(treeType.name).then(exists => {
-                if (window.GameLogger && Game.debugMode && exists) {
-                    GameLogger.debug(`Using image for ${treeType.name} trees`);
-                }
-            });
-        });
-        
-        // Create initial trees across the screen
+        // Get screen width and prepare for initial tree creation
         const screenWidth = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
         const numInitialTrees = 15; // More trees for better distribution
         
-        for (let i = 0; i < numInitialTrees; i++) {
-            // Distribute trees evenly across the screen and beyond
-            const xPos = (i * (screenWidth + 500) / numInitialTrees) + (Math.random() * 100 - 50);
-            this.createTree(xPos);
-        }
+        // Create array of promises for all image checks
+        const imageCheckPromises = [];
+        
+        // Start all image checks concurrently
+        this.treeTypes.forEach(treeType => {
+            const promise = this.checkTreeImage(treeType.name)
+                .then(exists => {
+                    if (window.GameLogger && Game.debugMode && exists) {
+                        GameLogger.debug(`Using image for ${treeType.name} trees`);
+                    }
+                    return exists;
+                })
+                .catch(() => {
+                    // If check fails, treat as not found but don't block other checks
+                    if (window.GameLogger && Game.debugMode) {
+                        GameLogger.debug(`Error checking image for ${treeType.name} trees`);
+                    }
+                    return false;
+                });
+            
+            imageCheckPromises.push(promise);
+        });
+        
+        // Wait for all image checks to complete before creating trees
+        Promise.all(imageCheckPromises)
+            .then(() => {
+                // Now create the initial trees
+                for (let i = 0; i < numInitialTrees; i++) {
+                    // Distribute trees evenly across the screen and beyond
+                    const xPos = (i * (screenWidth + 500) / numInitialTrees) + (Math.random() * 100 - 50);
+                    this.createTree(xPos);
+                }
+            })
+            .catch(error => {
+                // Fallback in case of errors - still create trees
+                if (window.GameLogger) {
+                    GameLogger.error('Error in tree image checking, creating trees with fallbacks', error);
+                }
+                
+                for (let i = 0; i < numInitialTrees; i++) {
+                    const xPos = (i * (screenWidth + 500) / numInitialTrees) + (Math.random() * 100 - 50);
+                    this.createTree(xPos);
+                }
+            });
     },
     
     /**
