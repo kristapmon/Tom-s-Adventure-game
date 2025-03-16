@@ -794,12 +794,36 @@ const TreeManager = {
             this.checkTreeImage(treeType.name);
         }
         
+        // Determine tree size with a probability distribution
+        // MODIFIED: Create more dramatic size differences between trees
+        let size;
+        const rand = Math.random();
+        
+        if (rand < CONFIG.TREE.SIZE_PROBABILITY.EXTRA_LARGE) {
+            // Chance for EXTRA LARGE trees
+            size = CONFIG.TREE.SIZE_RANGES.EXTRA_LARGE.MIN + Math.random() * (CONFIG.TREE.SIZE_RANGES.EXTRA_LARGE.MAX - CONFIG.TREE.SIZE_RANGES.EXTRA_LARGE.MIN);
+            
+            // Add data attribute for potential debugging
+            if (window.GameLogger && Game.debugMode) {
+                GameLogger.debug(`Creating extra large tree with size ${size}`);
+            }
+        } else if (rand < CONFIG.TREE.SIZE_PROBABILITY.EXTRA_LARGE + CONFIG.TREE.SIZE_PROBABILITY.VERY_TALL) {
+            // Chance for a VERY tall tree
+            size = CONFIG.TREE.SIZE_RANGES.VERY_TALL.MIN + Math.random() * (CONFIG.TREE.SIZE_RANGES.VERY_TALL.MAX - CONFIG.TREE.SIZE_RANGES.VERY_TALL.MIN);
+        } else if (rand < CONFIG.TREE.SIZE_PROBABILITY.EXTRA_LARGE + CONFIG.TREE.SIZE_PROBABILITY.VERY_TALL + CONFIG.TREE.SIZE_PROBABILITY.TALL) {
+            // Chance for a tall tree
+            size = CONFIG.TREE.SIZE_RANGES.TALL.MIN + Math.random() * (CONFIG.TREE.SIZE_RANGES.TALL.MAX - CONFIG.TREE.SIZE_RANGES.TALL.MIN);
+        } else {
+            // Chance for a regular tree
+            size = CONFIG.TREE.SIZE_RANGES.REGULAR.MIN + Math.random() * (CONFIG.TREE.SIZE_RANGES.REGULAR.MAX - CONFIG.TREE.SIZE_RANGES.REGULAR.MIN);
+        }
+        
         // Create tree object
         const tree = {
             id: treeId,
             x: xPos || (Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth) + Math.random() * 200,
             type: treeType,
-            size: 50 + Math.random() * 50, // Random size between 50-100px
+            size: size, // Variable size based on probability
             depth: Math.random() * 100 - 200, // Random depth for parallax effect
             element: null
         };
@@ -811,8 +835,31 @@ const TreeManager = {
         treeElement.style.position = 'absolute';
         treeElement.style.left = `${tree.x}px`;
         treeElement.style.bottom = `${CONFIG.PLAYER.BOTTOM}px`; // Match player bottom
-        treeElement.style.width = `${tree.size}px`;
-        treeElement.style.height = `${tree.size * 2}px`;
+        
+        // MODIFIED: Adjust height/width ratio for more natural looking trees
+        // Taller trees should be proportionally slimmer
+        if (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE) {
+            // Extra large trees
+            treeElement.style.width = `${size * CONFIG.TREE.WIDTH_FACTORS.EXTRA_LARGE}px`;
+            treeElement.style.height = `${size * CONFIG.TREE.HEIGHT_MULTIPLIERS.EXTRA_LARGE}px`;
+            treeElement.setAttribute('data-size', 'extra-large');
+        } else if (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL) {
+            // Very tall trees
+            treeElement.style.width = `${size * CONFIG.TREE.WIDTH_FACTORS.VERY_TALL}px`;
+            treeElement.style.height = `${size * CONFIG.TREE.HEIGHT_MULTIPLIERS.VERY_TALL}px`;
+            treeElement.setAttribute('data-size', 'very-tall');
+        } else if (size > CONFIG.TREE.SIZE_THRESHOLDS.TALL) {
+            // Tall trees
+            treeElement.style.width = `${size * CONFIG.TREE.WIDTH_FACTORS.TALL}px`;
+            treeElement.style.height = `${size * CONFIG.TREE.HEIGHT_MULTIPLIERS.TALL}px`;
+            treeElement.setAttribute('data-size', 'tall');
+        } else {
+            // Regular trees
+            treeElement.style.width = `${size * CONFIG.TREE.WIDTH_FACTORS.REGULAR}px`;
+            treeElement.style.height = `${size * CONFIG.TREE.HEIGHT_MULTIPLIERS.REGULAR}px`;
+            treeElement.setAttribute('data-size', 'regular');
+        }
+        
         treeElement.style.transform = `translateZ(${tree.depth}px)`;
         // Ensure trees are always in front of mountains regardless of depth
         treeElement.style.zIndex = Math.max(11, Math.floor(tree.depth) + 20);
@@ -831,51 +878,75 @@ const TreeManager = {
             // Create tree HTML based on type (fallback)
             let treeHTML = '';
             
+            // Get height/width ratio for proper proportions
+            const heightWidthRatio = parseFloat(treeElement.style.height) / parseFloat(treeElement.style.width);
+            const actualWidth = parseFloat(treeElement.style.width);
+            const actualHeight = parseFloat(treeElement.style.height);
+            
             switch(treeType.shape) {
                 case 'triangle': // Pine tree
+                    // Adjust trunk height based on tree size
+                    const trunkHeightPercent = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 15 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 18 : (size > CONFIG.TREE.SIZE_THRESHOLDS.TALL ? 20 : 30));
+                    
+                    // For extra large trees, make the triangles taller and thinner
+                    const triangleWidthFactor = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 0.7 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 0.8 : 1.0);
+                    
                     treeHTML = `
-                        <div style="position: absolute; bottom: 0; left: 25%; width: 50%; height: 30%; background-color: ${treeType.trunkColor};"></div>
-                        <div style="position: absolute; bottom: 30%; left: 0; width: 0; height: 0; 
-                            border-left: ${tree.size/2}px solid transparent; 
-                            border-right: ${tree.size/2}px solid transparent; 
-                            border-bottom: ${tree.size}px solid ${treeType.color};"></div>
-                        <div style="position: absolute; bottom: 50%; left: 10%; width: 0; height: 0; 
-                            border-left: ${tree.size*0.4}px solid transparent; 
-                            border-right: ${tree.size*0.4}px solid transparent; 
-                            border-bottom: ${tree.size*0.8}px solid ${treeType.color};"></div>
-                        <div style="position: absolute; bottom: 70%; left: 20%; width: 0; height: 0; 
-                            border-left: ${tree.size*0.3}px solid transparent; 
-                            border-right: ${tree.size*0.3}px solid transparent; 
-                            border-bottom: ${tree.size*0.6}px solid ${treeType.color};"></div>
+                        <div style="position: absolute; bottom: 0; left: ${25 + (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 10 : 0)}%; width: ${50 - (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 20 : 0)}%; height: ${trunkHeightPercent}%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: ${trunkHeightPercent}%; left: 0; width: 0; height: 0; 
+                            border-left: ${actualWidth/2 * triangleWidthFactor}px solid transparent; 
+                            border-right: ${actualWidth/2 * triangleWidthFactor}px solid transparent; 
+                            border-bottom: ${Math.min(actualHeight * 0.5, actualWidth * 1.5)}px solid ${treeType.color};"></div>
+                        <div style="position: absolute; bottom: ${trunkHeightPercent + (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 40 : 25)}%; left: ${size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 15 : 10}%; width: 0; height: 0; 
+                            border-left: ${actualWidth*0.35 * triangleWidthFactor}px solid transparent; 
+                            border-right: ${actualWidth*0.35 * triangleWidthFactor}px solid transparent; 
+                            border-bottom: ${Math.min(actualHeight * 0.4, actualWidth * 1.2)}px solid ${treeType.color};"></div>
+                        <div style="position: absolute; bottom: ${trunkHeightPercent + (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 70 : 45)}%; left: ${size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 25 : 20}%; width: 0; height: 0; 
+                            border-left: ${actualWidth*0.25 * triangleWidthFactor}px solid transparent; 
+                            border-right: ${actualWidth*0.25 * triangleWidthFactor}px solid transparent; 
+                            border-bottom: ${Math.min(actualHeight * 0.3, actualWidth * 0.9)}px solid ${treeType.color};"></div>
                     `;
                     break;
                     
                 case 'round': // Oak tree
+                    const oakTrunkHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 10 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 15 : Math.min(40, 40 * (50 / tree.size)));
+                    const canopyHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 80 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 75 : 70);
+                    
                     treeHTML = `
-                        <div style="position: absolute; bottom: 0; left: 40%; width: 20%; height: 40%; background-color: ${treeType.trunkColor};"></div>
-                        <div style="position: absolute; bottom: 35%; left: 10%; width: 80%; height: 70%; background-color: ${treeType.color}; border-radius: 50%;"></div>
+                        <div style="position: absolute; bottom: 0; left: ${40 + (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 5 : 0)}%; width: ${20 - (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 5 : 0)}%; height: ${oakTrunkHeight}%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: ${oakTrunkHeight}%; left: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 5 : 10}%; width: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 90 : 80}%; height: ${canopyHeight}%; background-color: ${treeType.color}; border-radius: 50%;"></div>
                     `;
                     break;
                     
                 case 'oval': // Maple tree
+                    const mapleTrunkHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 10 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 15 : Math.min(50, 50 * (50 / tree.size)));
+                    const mapleCanopyHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 80 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 70 : 60);
+                    
                     treeHTML = `
-                        <div style="position: absolute; bottom: 0; left: 40%; width: 20%; height: 50%; background-color: ${treeType.trunkColor};"></div>
-                        <div style="position: absolute; bottom: 45%; left: 5%; width: 90%; height: 60%; background-color: ${treeType.color}; border-radius: 40% 40% 60% 60%;"></div>
+                        <div style="position: absolute; bottom: 0; left: ${40 + (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 5 : 0)}%; width: ${20 - (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 5 : 0)}%; height: ${mapleTrunkHeight}%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: ${mapleTrunkHeight}%; left: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 2 : 5}%; width: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 96 : 90}%; height: ${mapleCanopyHeight}%; background-color: ${treeType.color}; border-radius: 40% 40% 60% 60%;"></div>
                     `;
                     break;
                     
                 case 'slim': // Birch tree
+                    const birchTrunkHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 20 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 25 : Math.min(80, 80 * (50 / tree.size)));
+                    const birchCanopyHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 70 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 60 : 50);
+                    
                     treeHTML = `
-                        <div style="position: absolute; bottom: 0; left: 45%; width: 10%; height: 80%; background-color: ${treeType.trunkColor};"></div>
-                        <div style="position: absolute; bottom: 60%; left: 20%; width: 60%; height: 50%; background-color: ${treeType.color}; border-radius: 40%;"></div>
+                        <div style="position: absolute; bottom: 0; left: ${45 + (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 2 : 0)}%; width: ${10 - (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 2 : 0)}%; height: ${birchTrunkHeight}%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: ${birchTrunkHeight}%; left: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 15 : 20}%; width: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 70 : 60}%; height: ${birchCanopyHeight}%; background-color: ${treeType.color}; border-radius: 40%;"></div>
                     `;
                     break;
                     
                 case 'weeping': // Willow tree
+                    const willowTrunkHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 15 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 20 : Math.min(60, 60 * (50 / tree.size)));
+                    const willowCanopyHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 70 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 65 : 60);
+                    const willowDropHeight = size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 55 : (size > CONFIG.TREE.SIZE_THRESHOLDS.VERY_TALL ? 50 : 30);
+                    
                     treeHTML = `
-                        <div style="position: absolute; bottom: 0; left: 45%; width: 10%; height: 60%; background-color: ${treeType.trunkColor};"></div>
-                        <div style="position: absolute; bottom: 50%; left: 10%; width: 80%; height: 60%; background-color: ${treeType.color}; border-radius: 50% 50% 0 0;"></div>
-                        <div style="position: absolute; bottom: 30%; left: 0; width: 100%; height: 30%; 
+                        <div style="position: absolute; bottom: 0; left: ${45 + (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 2 : 0)}%; width: ${10 - (size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 2 : 0)}%; height: ${willowTrunkHeight}%; background-color: ${treeType.trunkColor};"></div>
+                        <div style="position: absolute; bottom: ${willowTrunkHeight}%; left: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 5 : 10}%; width: ${size > CONFIG.TREE.SIZE_THRESHOLDS.EXTRA_LARGE ? 90 : 80}%; height: ${willowCanopyHeight}%; background-color: ${treeType.color}; border-radius: 50% 50% 0 0;"></div>
+                        <div style="position: absolute; bottom: ${willowTrunkHeight - willowDropHeight}%; left: 0; width: 100%; height: ${willowDropHeight}%; 
                             background: linear-gradient(to bottom, ${treeType.color}, transparent); 
                             border-radius: 0 0 40% 40%;"></div>
                     `;

@@ -137,6 +137,56 @@ const CONFIG = {
                 JUMP_DELAY: 150 // Reduced delay for key press
             }
         }
+    },
+    
+    // Tree configuration settings
+    TREE: {
+        // Size probabilities for different tree sizes
+        SIZE_PROBABILITY: {
+            REGULAR: 0.65,    // 65% chance, 40-100px width
+            TALL: 0.20,       // 20% chance, 200-250px width
+            VERY_TALL: 0.10,  // 10% chance, 300-400px width
+            EXTRA_LARGE: 0.05 // 5% chance, 500-600px width
+        },
+        // Size ranges for different tree categories
+        SIZE_RANGES: {
+            REGULAR: {
+                MIN: 40, 
+                MAX: 100
+            },
+            TALL: {
+                MIN: 200,
+                MAX: 250
+            },
+            VERY_TALL: {
+                MIN: 300,
+                MAX: 400
+            },
+            EXTRA_LARGE: {
+                MIN: 500,
+                MAX: 600
+            }
+        },
+        // Height multipliers for different tree sizes
+        HEIGHT_MULTIPLIERS: {
+            REGULAR: 2.0,
+            TALL: 2.2,
+            VERY_TALL: 2.5,
+            EXTRA_LARGE: 3.0
+        },
+        // Width factor (percentage of full width) for different tree sizes
+        WIDTH_FACTORS: {
+            REGULAR: 1.0,
+            TALL: 0.9,
+            VERY_TALL: 0.9,
+            EXTRA_LARGE: 1.0
+        },
+        // Thresholds for size categories (used in the TreeManager)
+        SIZE_THRESHOLDS: {
+            EXTRA_LARGE: 450,
+            VERY_TALL: 250,
+            TALL: 150
+        }
     }
 };
 

@@ -43,6 +43,13 @@ This file documents all notable changes to Tom's Adventure game.
 - Improved error handling for Firebase operations
 - Cache-busting mechanism that automatically updates file URLs when game version changes, preventing users from seeing outdated cached files
 - Image-based trees with automatic fallback to CSS rendering if images are not available
+- Configurable tree size probability settings in the CONFIG object, allowing easy adjustment of tree distribution percentages and size ranges
+- Dramatically enhanced variable tree heights with extreme size differences:
+  - 65% regular sized trees (40-100px width)
+  - 20% tall trees (200-250px width) 
+  - 10% very tall trees (300-400px width)
+  - 5% massive extra large trees (500-600px width) that tower far above the game world and reach well beyond the clouds
+  - All tree types have improved proportions with properly scaled trunks and canopies based on size
 
 ### Changed
 - Increased base game speed from 5 to 8 for a more exciting gameplay experience
