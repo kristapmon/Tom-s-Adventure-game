@@ -62,6 +62,8 @@ This file documents all notable changes to Tom's Adventure game.
 - Enhanced audio system with improved initialization on user interaction
 - Audio elements now preload when user first interacts with the game
 - Sound toggle in settings now properly initializes and controls all game sounds
+- Changed default difficulty from medium to hard for a more challenging gameplay experience
+- Refactored difficulty selection to use a configurable setting (DEFAULT_DIFFICULTY) in CONFIG object
 
 ### Fixed
 - Fixed bug with power-up spawning where only the first power-up would appear

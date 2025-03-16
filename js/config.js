@@ -16,6 +16,9 @@ const CONFIG = {
     JOKE_DISPLAY_TIME: 5000,
     DEATH_SCREEN_TIME: 5000,
     
+    // Default difficulty - can be 'easy', 'medium', or 'hard'
+    DEFAULT_DIFFICULTY: 'hard',
+    
     // Difficulty settings
     DIFFICULTY: {
         easy: {
@@ -123,7 +126,7 @@ const CONFIG = {
         EFFECTS: {
             CLOVER: {
                 DURATION: 10000, // 10 seconds (increased from 3)
-                TROLL_POINTS: 10 // Reduced from 50
+                TROLL_POINTS: 50 // Reduced from 50
             },
             GOLD: {
                 POINTS: 150
@@ -175,11 +178,8 @@ function saveSettings() {
 
 // Get current difficulty settings
 function getCurrentDifficultySettings() {
-    // Always use medium difficulty but with hard troll spawn rate
-    const mediumSettings = CONFIG.DIFFICULTY['medium'];
-    // Override the troll spawn rate with hard difficulty value
-    mediumSettings.TROLL_SPAWN_RATE = CONFIG.DIFFICULTY['hard'].TROLL_SPAWN_RATE;
-    return mediumSettings;
+    // Use the default difficulty setting from CONFIG
+    return CONFIG.DIFFICULTY[CONFIG.DEFAULT_DIFFICULTY];
 }
 
 // Update sound setting
