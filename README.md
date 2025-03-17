@@ -110,4 +110,29 @@ Contributions to Tom's Adventure are welcome! Please follow these steps:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Adding Custom Images
+
+### Tree Images
+To use custom tree images, place PNG files in the `img` folder with the following naming convention:
+- `tree-pine.png` - For pine trees (triangle shape)
+- `tree-oak.png` - For oak trees (round shape)
+- `tree-maple.png` - For maple trees (oval shape)
+- `tree-birch.png` - For birch trees (slim shape)
+- `tree-willow.png` - For willow trees (weeping shape)
+
+The game will automatically detect and use these images if they exist. If an image is not found, the game will fall back to CSS-based rendering.
+
+### Troll and Sun Images
+To use custom troll and sun images, place PNG or GIF files in the `img` folder with the following naming convention:
+- `troll.png` or `troll.gif` - For trolls
+- `sun.png` or `sun.gif` - For the sun
+
+The game will check for these images in the order listed (PNG first, then GIF) and use the first one found. If no images are found, the game will fall back to CSS-based rendering.
+
+You can also disable image usage entirely by setting the appropriate CONFIG values:
+```javascript
+CONFIG.TROLL.IMAGE.ENABLED = false; // Disable troll images
+CONFIG.SUN.IMAGE.ENABLED = false;   // Disable sun images
+``` 

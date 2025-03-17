@@ -213,7 +213,7 @@ select, input[type="checkbox"] {
     border-radius: 5px;
     transform-style: preserve-3d;
     will-change: transform;
-    box-shadow: 2px 5px 10px var(--shadow-color);
+    /* box-shadow: 2px 5px 10px var(--shadow-color); */
     image-rendering: pixelated;
 }
 
@@ -1150,6 +1150,11 @@ select, input[type="checkbox"] {
         transform-origin: left top !important;
         will-change: transform, left !important;
     }
+
+        .troll {
+            transform-origin: initial!important;
+            will-change: transform, left !important;
+        }
     
     /* Adjust the viewport bounds for proper spawning */
     #viewport-right-bound {

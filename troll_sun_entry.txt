@@ -1,0 +1,1 @@
+- Image support for trolls and the sun with automatic fallback to CSS rendering

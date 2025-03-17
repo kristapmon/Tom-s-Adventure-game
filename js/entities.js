@@ -475,6 +475,11 @@ const TrollManager = {
     lastTrollTime: 0,
     minTrollSpacing: 250, // Increased from 300 to ensure jumpable gaps
     
+    // Track troll image availability
+    imageChecked: false,
+    imageExists: false,
+    imageUrl: null,
+    
     /**
      * Initialize the troll manager
      */
@@ -482,6 +487,69 @@ const TrollManager = {
         this.trolls = [];
         this.nextId = 0;
         this.lastTrollTime = Date.now();
+        
+        // Reset image check flags
+        this.imageChecked = false;
+        this.imageExists = false;
+        this.imageUrl = null;
+        
+        // Check for troll image
+        this.checkTrollImage();
+    },
+    
+    /**
+     * Check if an image exists
+     * @param {string} url - The URL of the image to check
+     * @return {Promise} - Resolves to true if image exists, false otherwise
+     */
+    checkImageExists: function(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                resolve(true);
+            };
+            img.onerror = function() {
+                resolve(false);
+            };
+            img.src = url;
+        });
+    },
+    
+    /**
+     * Check if a troll image exists
+     */
+    checkTrollImage: async function() {
+        // If we've already checked, return the cached result
+        if (this.imageChecked) {
+            return this.imageExists;
+        }
+        
+        // First check for PNG
+        let exists = await this.checkImageExists('./img/troll.png');
+        if (exists) {
+            this.imageExists = true;
+            this.imageUrl = './img/troll.png';
+        } else {
+            // Then check for GIF
+            exists = await this.checkImageExists('./img/troll.gif');
+            if (exists) {
+                this.imageExists = true;
+                this.imageUrl = './img/troll.gif';
+            }
+        }
+        
+        // Cache the result
+        this.imageChecked = true;
+        
+        if (window.GameLogger && Game.debugMode) {
+            if (this.imageExists) {
+                GameLogger.debug(`Troll image found: ${this.imageUrl}`);
+            } else {
+                GameLogger.debug('No troll image found, using CSS fallback');
+            }
+        }
+        
+        return this.imageExists;
     },
     
     /**
@@ -502,52 +570,73 @@ const TrollManager = {
         const trollElement = document.createElement('div');
         trollElement.className = 'troll';
         trollElement.id = `troll-${trollId}`;
-        trollElement.style.left = `${troll.x}px`;
+        trollElement.style.position = 'absolute';
         trollElement.style.bottom = `${CONFIG.TROLL.BOTTOM}px`;
-        trollElement.style.width = `${CONFIG.TROLL.WIDTH}px`;
-        trollElement.style.height = `${CONFIG.TROLL.HEIGHT}px`;
+        trollElement.style.left = `${troll.x}px`;
         
-        // Add orc-like troll visual with weapon
-        trollElement.innerHTML = `
-            <div class="pixel-art" style="position: relative; width: 100%; height: 100%; transform-style: preserve-3d;">
-                <!-- Orc Body -->
-                <div style="position: absolute; top: 20%; left: 0; width: 100%; height: 80%; background-color: #4A6741; border-radius: 0;"></div>
-                
-                <!-- Orc Head -->
-                <div style="position: absolute; top: 0; left: 15%; width: 70%; height: 30%; background-color: #5D8A57; border-radius: 0;"></div>
-                
-                <!-- Orc Face -->
-                <div style="position: absolute; top: 5%; left: 25%; width: 50%; height: 20%; background-color: #4A6741; border-radius: 0;"></div>
-                
-                <!-- Orc Eyes -->
-                <div style="position: absolute; top: 10%; left: 30%; width: 10%; height: 10%; background-color: #FF4500; border-radius: 50%; box-shadow: 0 0 5px #FF4500;"></div>
-                <div style="position: absolute; top: 10%; left: 60%; width: 10%; height: 10%; background-color: #FF4500; border-radius: 50%; box-shadow: 0 0 5px #FF4500;"></div>
-                
-                <!-- Orc Eyebrows -->
-                <div style="position: absolute; top: 5%; left: 25%; width: 20%; height: 5%; background-color: #2E3B28; border-radius: 0; transform: rotate(-10deg);"></div>
-                <div style="position: absolute; top: 5%; left: 55%; width: 20%; height: 5%; background-color: #2E3B28; border-radius: 0; transform: rotate(10deg);"></div>
-                
-                <!-- Orc Mouth with Tusks -->
-                <div style="position: absolute; top: 22%; left: 35%; width: 30%; height: 5%; background-color: #2E3B28; border-radius: 0 0 5px 5px;"></div>
-                <div style="position: absolute; top: 18%; left: 32%; width: 8%; height: 10%; background-color: #F5F5DC; border-radius: 0; transform: rotate(-10deg);"></div>
-                <div style="position: absolute; top: 18%; left: 60%; width: 8%; height: 10%; background-color: #F5F5DC; border-radius: 0; transform: rotate(10deg);"></div>
-                
-                <!-- Orc Ears (Pointed) -->
-                <div style="position: absolute; top: 5%; left: 5%; width: 15%; height: 15%; background-color: #5D8A57; border-radius: 0; clip-path: polygon(0% 50%, 100% 0%, 100% 100%);"></div>
-                <div style="position: absolute; top: 5%; left: 80%; width: 15%; height: 15%; background-color: #5D8A57; border-radius: 0; clip-path: polygon(0% 0%, 100% 50%, 0% 100%);"></div>
-                
-                <!-- Armor/Shoulder Pads -->
-                <div style="position: absolute; top: 30%; left: 0; width: 30%; height: 20%; background-color: #8B4513; border-radius: 5px;"></div>
-                <div style="position: absolute; top: 30%; left: 70%; width: 30%; height: 20%; background-color: #8B4513; border-radius: 5px;"></div>
-                
-                <!-- Belt -->
-                <div style="position: absolute; top: 60%; left: 0; width: 100%; height: 10%; background-color: #8B4513; border-radius: 0;"></div>
-                
-                <!-- Weapon (Axe) -->
-                <div style="position: absolute; top: 30%; left: -40%; width: 50%; height: 8%; background-color: #8B4513; border-radius: 0; transform: rotate(-45deg);"></div>
-                <div style="position: absolute; top: 20%; left: -50%; width: 25%; height: 25%; background-color: #A9A9A9; border-radius: 0; clip-path: polygon(0% 50%, 50% 0%, 100% 50%, 50% 100%);"></div>
-            </div>
-        `;
+        // If we have a troll image and images are enabled, use image dimensions
+        if (CONFIG.TROLL.IMAGE.ENABLED && this.imageExists && this.imageUrl) {
+            trollElement.style.width = `${CONFIG.TROLL.IMAGE.WIDTH}px`;
+            trollElement.style.height = `${CONFIG.TROLL.IMAGE.HEIGHT}px`;
+        } else {
+            trollElement.style.width = `${CONFIG.TROLL.WIDTH}px`;
+            trollElement.style.height = `${CONFIG.TROLL.HEIGHT}px`;
+        }
+        
+        trollElement.style.zIndex = '15';
+        
+        // If we have a troll image and images are enabled, use it; otherwise, use CSS fallback
+        if (CONFIG.TROLL.IMAGE.ENABLED && this.imageExists && this.imageUrl) {
+            trollElement.style.backgroundImage = `url('${this.imageUrl}')`;
+            trollElement.style.backgroundSize = 'contain';
+            trollElement.style.backgroundRepeat = 'no-repeat';
+            trollElement.style.backgroundPosition = 'bottom center';
+            
+            // No inner HTML needed when using image
+            trollElement.innerHTML = '';
+        } else {
+            // Add orc-like troll visual with weapon
+            trollElement.innerHTML = `
+                <div class="pixel-art" style="position: relative; width: 100%; height: 100%; transform-style: preserve-3d;">
+                    <!-- Orc Body -->
+                    <div style="position: absolute; top: 20%; left: 0; width: 100%; height: 80%; background-color: #4A6741; border-radius: 0;"></div>
+                    
+                    <!-- Orc Head -->
+                    <div style="position: absolute; top: 0; left: 15%; width: 70%; height: 30%; background-color: #5D8A57; border-radius: 0;"></div>
+                    
+                    <!-- Orc Face -->
+                    <div style="position: absolute; top: 5%; left: 25%; width: 50%; height: 20%; background-color: #4A6741; border-radius: 0;"></div>
+                    
+                    <!-- Orc Eyes -->
+                    <div style="position: absolute; top: 10%; left: 30%; width: 10%; height: 10%; background-color: #FF4500; border-radius: 50%; box-shadow: 0 0 5px #FF4500;"></div>
+                    <div style="position: absolute; top: 10%; left: 60%; width: 10%; height: 10%; background-color: #FF4500; border-radius: 50%; box-shadow: 0 0 5px #FF4500;"></div>
+                    
+                    <!-- Orc Eyebrows -->
+                    <div style="position: absolute; top: 5%; left: 25%; width: 20%; height: 5%; background-color: #2E3B28; border-radius: 0; transform: rotate(-10deg);"></div>
+                    <div style="position: absolute; top: 5%; left: 55%; width: 20%; height: 5%; background-color: #2E3B28; border-radius: 0; transform: rotate(10deg);"></div>
+                    
+                    <!-- Orc Mouth with Tusks -->
+                    <div style="position: absolute; top: 22%; left: 35%; width: 30%; height: 5%; background-color: #2E3B28; border-radius: 0 0 5px 5px;"></div>
+                    <div style="position: absolute; top: 18%; left: 32%; width: 8%; height: 10%; background-color: #F5F5DC; border-radius: 0; transform: rotate(-10deg);"></div>
+                    <div style="position: absolute; top: 18%; left: 60%; width: 8%; height: 10%; background-color: #F5F5DC; border-radius: 0; transform: rotate(10deg);"></div>
+                    
+                    <!-- Orc Ears (Pointed) -->
+                    <div style="position: absolute; top: 5%; left: 5%; width: 15%; height: 15%; background-color: #5D8A57; border-radius: 0; clip-path: polygon(0% 50%, 100% 0%, 100% 100%);"></div>
+                    <div style="position: absolute; top: 5%; left: 80%; width: 15%; height: 15%; background-color: #5D8A57; border-radius: 0; clip-path: polygon(0% 0%, 100% 50%, 0% 100%);"></div>
+                    
+                    <!-- Armor/Shoulder Pads -->
+                    <div style="position: absolute; top: 30%; left: 0; width: 30%; height: 20%; background-color: #8B4513; border-radius: 5px;"></div>
+                    <div style="position: absolute; top: 30%; left: 70%; width: 30%; height: 20%; background-color: #8B4513; border-radius: 5px;"></div>
+                    
+                    <!-- Belt -->
+                    <div style="position: absolute; top: 60%; left: 0; width: 100%; height: 10%; background-color: #8B4513; border-radius: 0;"></div>
+                    
+                    <!-- Weapon (Axe) -->
+                    <div style="position: absolute; top: 30%; left: -40%; width: 50%; height: 8%; background-color: #8B4513; border-radius: 0; transform: rotate(-45deg);"></div>
+                    <div style="position: absolute; top: 20%; left: -50%; width: 25%; height: 25%; background-color: #A9A9A9; border-radius: 0; clip-path: polygon(0% 50%, 50% 0%, 100% 50%, 50% 100%);"></div>
+                </div>
+            `;
+        }
         
         // Add to game container
         document.getElementById('game-container').appendChild(trollElement);
@@ -1026,37 +1115,137 @@ const TreeManager = {
 // Sun entity
 const SunManager = {
     sun: null,
+    imageChecked: false,
+    imageExists: false,
+    imageUrl: null,
+    
+    /**
+     * Check if an image exists
+     * @param {string} url - The URL of the image to check
+     * @return {Promise} - Resolves to true if image exists, false otherwise
+     */
+    checkImageExists: function(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                resolve(true);
+            };
+            img.onerror = function() {
+                resolve(false);
+            };
+            img.src = url;
+        });
+    },
+    
+    /**
+     * Check if a sun image exists
+     */
+    checkSunImage: async function() {
+        // If we've already checked, return the cached result
+        if (this.imageChecked) {
+            return this.imageExists;
+        }
+        
+        // First check for PNG
+        let exists = await this.checkImageExists('./img/sun.png');
+        if (exists) {
+            this.imageExists = true;
+            this.imageUrl = './img/sun.png';
+        } else {
+            // Then check for GIF
+            exists = await this.checkImageExists('./img/sun.gif');
+            if (exists) {
+                this.imageExists = true;
+                this.imageUrl = './img/sun.gif';
+            }
+        }
+        
+        // Cache the result
+        this.imageChecked = true;
+        
+        if (window.GameLogger && Game.debugMode) {
+            if (this.imageExists) {
+                GameLogger.debug(`Sun image found: ${this.imageUrl}`);
+            } else {
+                GameLogger.debug('No sun image found, using CSS fallback');
+            }
+        }
+        
+        return this.imageExists;
+    },
     
     /**
      * Initialize the sun
      */
     init: function() {
+        // Reset image check flags
+        this.imageChecked = false;
+        this.imageExists = false;
+        this.imageUrl = null;
+        
+        // Check for sun image first
+        this.checkSunImage().then(() => {
+            this.createSun();
+        }).catch(error => {
+            // Fallback in case of errors - still create sun with CSS
+            if (window.GameLogger && Game.debugMode) {
+                GameLogger.error('Error checking sun image, creating sun with CSS fallback', error);
+            }
+            this.createSun();
+        });
+    },
+    
+    /**
+     * Create the sun element
+     */
+    createSun: function() {
         // Create sun element
         const sunElement = document.createElement('div');
         sunElement.id = 'sun';
         sunElement.style.position = 'absolute';
-        sunElement.style.top = '50px';
-        sunElement.style.right = '100px';
-        sunElement.style.width = '80px';
-        sunElement.style.height = '80px';
-        sunElement.style.borderRadius = '50%';
-        sunElement.style.background = 'radial-gradient(circle, #FFFF00 60%, #FFA500)';
-        sunElement.style.boxShadow = '0 0 30px #FFFF00';
+        sunElement.style.top = `${CONFIG.SUN.TOP}px`;
+        sunElement.style.right = `${CONFIG.SUN.RIGHT}px`;
+        
+        // If we have a sun image and images are enabled, use image dimensions
+        if (CONFIG.SUN.IMAGE.ENABLED && this.imageExists && this.imageUrl) {
+            sunElement.style.width = `${CONFIG.SUN.IMAGE.WIDTH}px`;
+            sunElement.style.height = `${CONFIG.SUN.IMAGE.HEIGHT}px`;
+        } else {
+            sunElement.style.width = `${CONFIG.SUN.WIDTH}px`;
+            sunElement.style.height = `${CONFIG.SUN.HEIGHT}px`;
+        }
+        
         sunElement.style.zIndex = '-5';
         
-        // Add rays
-        const raysHTML = `
-            <div style="position: absolute; top: -20px; left: 35px; width: 10px; height: 20px; background-color: #FFFF00;"></div>
-            <div style="position: absolute; top: 80px; left: 35px; width: 10px; height: 20px; background-color: #FFFF00;"></div>
-            <div style="position: absolute; top: 35px; left: -20px; width: 20px; height: 10px; background-color: #FFFF00;"></div>
-            <div style="position: absolute; top: 35px; left: 80px; width: 20px; height: 10px; background-color: #FFFF00;"></div>
-            <div style="position: absolute; top: 10px; left: 10px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
-            <div style="position: absolute; top: 60px; left: 60px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
-            <div style="position: absolute; top: 10px; left: 60px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
-            <div style="position: absolute; top: 60px; left: 10px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
-        `;
-        
-        sunElement.innerHTML = raysHTML;
+        // If we have a sun image and images are enabled, use it; otherwise, use CSS fallback
+        if (CONFIG.SUN.IMAGE.ENABLED && this.imageExists && this.imageUrl) {
+            sunElement.style.backgroundImage = `url('${this.imageUrl}')`;
+            sunElement.style.backgroundSize = 'contain';
+            sunElement.style.backgroundRepeat = 'no-repeat';
+            sunElement.style.backgroundPosition = 'center center';
+            
+            // No inner HTML needed when using image
+            sunElement.innerHTML = '';
+        } else {
+            // Use CSS-based sun with rays
+            sunElement.style.borderRadius = '50%';
+            sunElement.style.background = 'radial-gradient(circle, #FFFF00 60%, #FFA500)';
+            sunElement.style.boxShadow = '0 0 30px #FFFF00';
+            
+            // Add rays
+            const raysHTML = `
+                <div style="position: absolute; top: -20px; left: 35px; width: 10px; height: 20px; background-color: #FFFF00;"></div>
+                <div style="position: absolute; top: 80px; left: 35px; width: 10px; height: 20px; background-color: #FFFF00;"></div>
+                <div style="position: absolute; top: 35px; left: -20px; width: 20px; height: 10px; background-color: #FFFF00;"></div>
+                <div style="position: absolute; top: 35px; left: 80px; width: 20px; height: 10px; background-color: #FFFF00;"></div>
+                <div style="position: absolute; top: 10px; left: 10px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
+                <div style="position: absolute; top: 60px; left: 60px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
+                <div style="position: absolute; top: 10px; left: 60px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
+                <div style="position: absolute; top: 60px; left: 10px; width: 10px; height: 10px; background-color: #FFFF00; transform: rotate(45deg);"></div>
+            `;
+            
+            sunElement.innerHTML = raysHTML;
+        }
         
         // Add to game container
         document.getElementById('game-container').appendChild(sunElement);
@@ -1074,8 +1263,10 @@ const SunManager = {
     animate: function() {
         if (!this.sun) return;
         
-        // Add subtle pulsing animation
-        this.sun.style.animation = 'sunPulse 5s infinite alternate';
+        // Add subtle pulsing animation only for CSS-based sun
+        if (!CONFIG.SUN.IMAGE.ENABLED || !this.imageExists || !this.imageUrl) {
+            this.sun.style.animation = 'sunPulse 5s infinite alternate';
+        }
     },
     
     /**
@@ -1086,6 +1277,11 @@ const SunManager = {
             this.sun.parentNode.removeChild(this.sun);
         }
         this.sun = null;
+        
+        // Reset image check flags
+        this.imageChecked = false;
+        this.imageExists = false;
+        this.imageUrl = null;
     }
 };
 

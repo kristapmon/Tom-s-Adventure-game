@@ -54,9 +54,31 @@ const CONFIG = {
     
     // Troll settings
     TROLL: {
-        WIDTH: 60,
-        HEIGHT: 60,
-        BOTTOM: 60
+        WIDTH: 70,  // Size for CSS fallback trolls
+        HEIGHT: 70, // Size for CSS fallback trolls
+        BOTTOM: 60,
+        // Image settings
+        IMAGE: {
+            ENABLED: true,  // Whether to use images for trolls if available
+            FALLBACK: true, // Whether to use CSS fallback if image not found
+            WIDTH: 120,     // Width when using image
+            HEIGHT: 120     // Height when using image
+        }
+    },
+    
+    // Sun settings
+    SUN: {
+        WIDTH: 80,
+        HEIGHT: 80,
+        TOP: 50,
+        RIGHT: 100,
+        // Image settings
+        IMAGE: {
+            ENABLED: true,  // Whether to use images for sun if available
+            FALLBACK: true,  // Whether to use CSS fallback if image not found
+            WIDTH: 120,     // Width when using image
+            HEIGHT: 120     // Height when using image
+        }
     },
     
     // Power-up settings

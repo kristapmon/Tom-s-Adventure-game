@@ -50,6 +50,12 @@ This file documents all notable changes to Tom's Adventure game.
   - 10% very tall trees (300-400px width)
   - 5% massive extra large trees (500-600px width) that tower far above the game world and reach well beyond the clouds
   - All tree types have improved proportions with properly scaled trunks and canopies based on size
+- Image support for trolls and the sun with automatic fallback to CSS rendering:
+  - Game checks for `troll.png` or `troll.gif` in the `img` folder
+  - Game checks for `sun.png` or `sun.gif` in the `img` folder
+  - Configurable via CONFIG settings to enable/disable image usage
+  - Enhanced troll size (70px) for better visibility while remaining jumpable
+  - Improved sun appearance (80px) with rays when using CSS fallback
 
 ### Changed
 - Increased base game speed from 5 to 8 for a more exciting gameplay experience
@@ -100,6 +106,7 @@ This file documents all notable changes to Tom's Adventure game.
 - Fixed issue where multiple points were awarded when colliding with trolls while invincible
 - Fixed gold power-up score discrepancy by ensuring all references use the same score value (150 points)
 - Fixed issue where tree images weren't immediately displayed when starting a game, ensuring images are properly loaded before trees are created
+- Fixed troll and sun image sizing issue where they weren't using the correct dimensions (120x120px) when images were loaded
 
 ## [1.6.1] - 2023-09-15
 
