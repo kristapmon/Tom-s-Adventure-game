@@ -595,47 +595,27 @@ const TrollManager = {
             // No inner HTML needed when using image
             trollElement.innerHTML = '';
         } else {
-            // Add orc-like troll visual with weapon
+            // CSS-built ogre (tusks + club), animated via styles.css
             trollElement.innerHTML = `
-                <div class="pixel-art" style="position: relative; width: 100%; height: 100%; transform-style: preserve-3d;">
-                    <!-- Orc Body -->
-                    <div style="position: absolute; top: 20%; left: 0; width: 100%; height: 80%; background-color: #4A6741; border-radius: 0;"></div>
-                    
-                    <!-- Orc Head -->
-                    <div style="position: absolute; top: 0; left: 15%; width: 70%; height: 30%; background-color: #5D8A57; border-radius: 0;"></div>
-                    
-                    <!-- Orc Face -->
-                    <div style="position: absolute; top: 5%; left: 25%; width: 50%; height: 20%; background-color: #4A6741; border-radius: 0;"></div>
-                    
-                    <!-- Orc Eyes -->
-                    <div style="position: absolute; top: 10%; left: 30%; width: 10%; height: 10%; background-color: #FF4500; border-radius: 50%; box-shadow: 0 0 5px #FF4500;"></div>
-                    <div style="position: absolute; top: 10%; left: 60%; width: 10%; height: 10%; background-color: #FF4500; border-radius: 50%; box-shadow: 0 0 5px #FF4500;"></div>
-                    
-                    <!-- Orc Eyebrows -->
-                    <div style="position: absolute; top: 5%; left: 25%; width: 20%; height: 5%; background-color: #2E3B28; border-radius: 0; transform: rotate(-10deg);"></div>
-                    <div style="position: absolute; top: 5%; left: 55%; width: 20%; height: 5%; background-color: #2E3B28; border-radius: 0; transform: rotate(10deg);"></div>
-                    
-                    <!-- Orc Mouth with Tusks -->
-                    <div style="position: absolute; top: 22%; left: 35%; width: 30%; height: 5%; background-color: #2E3B28; border-radius: 0 0 5px 5px;"></div>
-                    <div style="position: absolute; top: 18%; left: 32%; width: 8%; height: 10%; background-color: #F5F5DC; border-radius: 0; transform: rotate(-10deg);"></div>
-                    <div style="position: absolute; top: 18%; left: 60%; width: 8%; height: 10%; background-color: #F5F5DC; border-radius: 0; transform: rotate(10deg);"></div>
-                    
-                    <!-- Orc Ears (Pointed) -->
-                    <div style="position: absolute; top: 5%; left: 5%; width: 15%; height: 15%; background-color: #5D8A57; border-radius: 0; clip-path: polygon(0% 50%, 100% 0%, 100% 100%);"></div>
-                    <div style="position: absolute; top: 5%; left: 80%; width: 15%; height: 15%; background-color: #5D8A57; border-radius: 0; clip-path: polygon(0% 0%, 100% 50%, 0% 100%);"></div>
-                    
-                    <!-- Armor/Shoulder Pads -->
-                    <div style="position: absolute; top: 30%; left: 0; width: 30%; height: 20%; background-color: #8B4513; border-radius: 5px;"></div>
-                    <div style="position: absolute; top: 30%; left: 70%; width: 30%; height: 20%; background-color: #8B4513; border-radius: 5px;"></div>
-                    
-                    <!-- Belt -->
-                    <div style="position: absolute; top: 60%; left: 0; width: 100%; height: 10%; background-color: #8B4513; border-radius: 0;"></div>
-                    
-                    <!-- Weapon (Axe) -->
-                    <div style="position: absolute; top: 30%; left: -40%; width: 50%; height: 8%; background-color: #8B4513; border-radius: 0; transform: rotate(-45deg);"></div>
-                    <div style="position: absolute; top: 20%; left: -50%; width: 25%; height: 25%; background-color: #A9A9A9; border-radius: 0; clip-path: polygon(0% 50%, 50% 0%, 100% 50%, 50% 100%);"></div>
-                </div>
-            `;
+                <div class="troll-figure">
+                  <div class="troll-body">
+                    <div class="troll-head">
+                      <div class="troll-ear left"></div>
+                      <div class="troll-ear right"></div>
+                      <div class="troll-eye left"></div>
+                      <div class="troll-eye right"></div>
+                      <div class="troll-brow"></div>
+                      <div class="troll-tusk left"></div>
+                      <div class="troll-tusk right"></div>
+                    </div>
+                    <div class="troll-arm left">
+                      <div class="troll-club"></div>
+                    </div>
+                    <div class="troll-arm right"></div>
+                    <div class="troll-leg left"></div>
+                    <div class="troll-leg right"></div>
+                  </div>
+                </div>`;
         }
         
         // Add to game container

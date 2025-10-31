@@ -2,6 +2,30 @@
 
 This file documents all notable changes to Tom's Adventure game.
 
+## v1.1 - CSS Trolls Replacement (2025-10-31)
+
+**Replaced image-based trolls with custom vanilla CSS/HTML animated ogres that match existing dimensions and add movement animations.**
+
+### 🎯 Core Issue Resolved
+
+- **CSS Trolls**: Replaced static troll images with animated CSS ogres featuring tusks, club, and glowing red eyes
+- **Consistent Dimensions**: Maintained ~70x70 pixel size matching existing fallback trolls
+- **Animation System**: Added bobbing, arm-swinging, club-swinging, and leg-walking animations
+- **Responsive Design**: Trolls scale properly across all screen sizes using media queries
+
+### 🔧 Technical Changes
+
+- **Image Disabling**: Set CONFIG.TROLL.IMAGE.ENABLED to false to force CSS troll rendering
+- **DOM Structure**: Replaced complex inline pixel-art HTML with clean class-based troll figure DOM
+- **CSS Animations**: Added keyframes for troll-bob, arm-swing, club-swing, and leg-walk animations
+- **Mobile Scaling**: Added responsive media queries matching existing game element scaling
+
+### 📁 Files Modified
+
+- `js/config.js` - Disabled troll images to force CSS trolls
+- `js/entities.js` - Replaced createTroll fallback HTML with semantic troll DOM structure
+- `styles.css` - Added comprehensive troll styling, animations, and responsive scaling
+
 ## [Unreleased]
 
 ### Added

@@ -59,7 +59,7 @@ const CONFIG = {
         BOTTOM: 60,
         // Image settings
         IMAGE: {
-            ENABLED: true,  // Whether to use images for trolls if available
+            ENABLED: false, // Force CSS trolls and ignore images
             FALLBACK: true, // Whether to use CSS fallback if image not found
             WIDTH: 120,     // Width when using image
             HEIGHT: 120     // Height when using image
