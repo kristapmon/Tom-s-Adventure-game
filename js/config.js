@@ -125,7 +125,7 @@ const CONFIG = {
         MAX_SIZE: 150,
         MIN_SPEED: 0.5,
         MAX_SPEED: 1.0,
-        COUNT: 5
+        COUNT: 2
     },
     
     // Sound settings
@@ -208,7 +208,10 @@ const CONFIG = {
             EXTRA_LARGE: 450,
             VERY_TALL: 250,
             TALL: 150
-        }
+        },
+        // Count settings for tree spawning
+        COUNT_INITIAL: 9,  // Initial number of trees to spawn
+        MIN_ACTIVE: 9      // Minimum number of trees to maintain
     }
 };
 

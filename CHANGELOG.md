@@ -2,6 +2,27 @@
 
 This file documents all notable changes to Tom's Adventure game.
 
+## v1.2 - Background Clutter Reduction (2025-11-01)
+
+**Reduced background trees and mountains for cleaner visuals with configurable counts.**
+
+### 🎯 Core Changes
+
+- **Tree Count**: Reduced from 15 to 9 trees (~40% fewer)
+- **Mountain Count**: Reduced from 3 to 2 mountains (~33% fewer)
+- **Config-Driven**: All counts now configurable via CONFIG object for easy tuning
+
+### 🔧 Technical Changes
+
+- Added `COUNT_INITIAL: 9` and `MIN_ACTIVE: 9` to `CONFIG.TREE`
+- Changed `CONFIG.MOUNTAIN.COUNT` from 5 to 2
+- Wired TreeManager and MountainManager to use config values instead of hardcoded numbers
+
+### 📁 Files Modified
+
+- `js/config.js` - Added tree count settings and updated mountain count
+- `js/entities.js` - Wired managers to use config values
+
 ## v1.1 - CSS Trolls Replacement (2025-10-31)
 
 **Replaced image-based trolls with custom vanilla CSS/HTML animated ogres that match existing dimensions and add movement animations.**

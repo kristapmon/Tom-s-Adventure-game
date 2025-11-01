@@ -798,7 +798,7 @@ const TreeManager = {
         
         // Get screen width and prepare for initial tree creation
         const screenWidth = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
-        const numInitialTrees = 15; // More trees for better distribution
+        const numInitialTrees = CONFIG.TREE.COUNT_INITIAL;
         
         // Create array of promises for all image checks
         const imageCheckPromises = [];
@@ -1067,7 +1067,7 @@ const TreeManager = {
         }
         
         // Check if we need more trees
-        if (this.trees.length < 15) {
+        if (this.trees.length < CONFIG.TREE.MIN_ACTIVE) {
             // Get appropriate spawn position based on device
             const rightEdge = Game.getSpawnPosition ? Game.getSpawnPosition() : window.innerWidth;
             
@@ -1392,7 +1392,7 @@ const MountainManager = {
         
         // Create initial mountains - fewer mountains, more spread out
         const screenWidth = window.innerWidth;
-        const numInitialMountains = 3; // Reduced from 5 to 3
+        const numInitialMountains = CONFIG.MOUNTAIN.COUNT;
         
         for (let i = 0; i < numInitialMountains; i++) {
             // Distribute mountains evenly across the screen and beyond with more spacing
@@ -1485,7 +1485,7 @@ const MountainManager = {
         }
         
         // Check if we need more mountains - but keep the count low
-        if (this.mountains.length < 3) {
+        if (this.mountains.length < CONFIG.MOUNTAIN.COUNT) {
             this.createMountain(window.innerWidth + Math.random() * 500);
         }
     },
