@@ -2,6 +2,16 @@
 
 This file documents all notable changes to Tom's Adventure game.
 
+## v1.3 - Troll Visibility & Animations (2025-11-01)
+
+- **Colors**: High-contrast gradients on troll body, head, ears
+- **Outlines**: Drop-shadow filter for clear silhouette
+- **Shadows**: White glow outlines + stronger depth shadows
+- **Animations**: 2.5x bigger bobbing, double limb swings, faster speeds
+- **Eyes**: Pulsing red glow animation
+
+**File**: `styles.css`
+
 ## v1.2 - Background Clutter Reduction (2025-11-01)
 
 **Reduced background trees and mountains for cleaner visuals with configurable counts.**
